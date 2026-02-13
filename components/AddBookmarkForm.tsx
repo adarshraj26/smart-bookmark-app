@@ -2,7 +2,6 @@
 
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Folder } from "@/lib/types";
 
 interface AddBookmarkFormProps {
