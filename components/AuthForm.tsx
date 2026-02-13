@@ -45,15 +45,30 @@ export default function AuthForm() {
     setLoading(true);
 
     try {
+      // Get the current origin (works on both desktop and mobile)
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/callback`
+        : '';
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
+          queryParams: {
+            prompt: 'consent', // Forces consent screen on mobile
+          },
         },
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("OAuth error:", error);
+        throw error;
+      }
+      
+      // Don't set loading to false here - OAuth will redirect
     } catch (err: any) {
-      setError(err.message || "Google authentication failed");
+      console.error("Google auth error:", err);
+      setError(err.message || "Google authentication failed. Make sure your redirect URL is configured correctly in Google Cloud Console.");
       setLoading(false);
     }
   }
