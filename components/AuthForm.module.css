@@ -1,0 +1,99 @@
+.authContainer {
+  /* Style labels to be white and visible */
+}
+
+.authContainer :global(.supabase-auth-ui) {
+  /* General styling */
+}
+
+/* Make labels white */
+.authContainer :global(label) {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+/* Make all text white/visible */
+.authContainer :global(.auth-ui-container) {
+  color: #ffffff;
+}
+
+.authContainer :global(.auth-ui-form) {
+  color: #ffffff;
+}
+
+/* Input styling */
+.authContainer :global(input) {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border-color: #d1d5db !important;
+}
+
+.authContainer :global(input::placeholder) {
+  color: #9ca3af !important;
+}
+
+.authContainer :global(input:focus) {
+  border-color: #3b82f6 !important;
+  outline: none;
+}
+
+/* Button styling - All buttons */
+.authContainer :global(button) {
+  color: #ffffff !important;
+}
+
+.authContainer :global([type="submit"]) {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Google button specific styling */
+.authContainer :global(button[data-provider="google"]),
+.authContainer :global(button[data-testid*="google"]),
+.authContainer :global(.supabase-auth-ui-button) {
+  color: #ffffff !important;
+}
+
+.authContainer :global(button span) {
+  color: #ffffff !important;
+}
+
+/* Make all text elements visible */
+.authContainer :global(p),
+.authContainer :global(span),
+.authContainer :global(div) {
+  color: #ffffff !important;
+}
+
+/* Links */
+.authContainer :global(a) {
+  color: #93c5fd !important;
+}
+
+.authContainer :global(a:hover) {
+  color: #dbeafe !important;
+}
+
+/* Fix specific Supabase Auth UI classes */
+.authContainer :global(.supabase-auth-ui-label) {
+  color: #ffffff !important;
+}
+
+.authContainer :global(.supabase-auth-ui-input) {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+}
+
+.authContainer :global(.supabase-auth-ui-button) {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure button text is always visible */
+.authContainer :global(button) {
+  color: #ffffff !important;
+}
+
+.authContainer :global(button *) {
+  color: #ffffff !important;
+}

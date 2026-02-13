@@ -53,3 +53,60 @@ html {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Supabase Auth UI Styling */
+.supabase-auth-ui button {
+  color: #ffffff !important;
+  text-shadow: none !important;
+}
+
+.supabase-auth-ui button span {
+  color: #ffffff !important;
+}
+
+.supabase-auth-ui button > * {
+  color: #ffffff !important;
+}
+
+.supabase-auth-ui-button {
+  color: #ffffff !important;
+}
+
+.supabase-auth-ui-button span {
+  color: #ffffff !important;
+}
+
+.supabase-auth-ui-button > * {
+  color: #ffffff !important;
+}
+
+/* Auth UI text elements */
+[data-testid*="auth"] button {
+  color: #ffffff !important;
+}
+
+[data-testid*="auth"] button span {
+  color: #ffffff !important;
+}
+
+[data-testid*="auth"] button > * {
+  color: #ffffff !important;
+}
+
+/* General button text fix */
+button:not([class*="bg-"]) {
+  color: inherit !important;
+}
+
+/* Specific styling for all buttons */
+button[type="submit"],
+button[data-provider],
+button[class*="button"] {
+  color: #ffffff !important;
+}
+
+button[type="submit"] span,
+button[data-provider] span,
+button[class*="button"] span {
+  color: #ffffff !important;
+}
