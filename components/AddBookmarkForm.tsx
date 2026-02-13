@@ -37,14 +37,19 @@ export default function AddBookmarkForm({
           user_id: userId,
           name: newFolderName.trim(),
         }).select();
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase folder insert error:", error);
+          setFolderError(error.message || "Failed to create folder");
+          return;
+        }
         if (data && data[0]) {
           setFolders([data[0], ...folders]);
           setFolderId(data[0].id);
           setNewFolderName("");
         }
       } catch (err) {
-        setFolderError("Failed to create folder");
+        console.error("Exception during folder creation:", err);
+        setFolderError((err as Error).message || "Failed to create folder");
       } finally {
         setFolderLoading(false);
       }
