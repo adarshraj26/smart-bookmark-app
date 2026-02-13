@@ -98,8 +98,9 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5">
-          <div className="flex items-center justify-between gap-4">
+        <div className="w-full px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo - Left Side */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="p-1.5 sm:p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex-shrink-0">
                 <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -108,6 +109,8 @@ export default function Home() {
               </div>
               <h1 className="text-lg sm:text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent truncate">Smart Bookmark</h1>
             </div>
+            
+            {/* Profile Menu - Right Side */}
             <div className="flex-shrink-0">
               <UserMenu user={user} />
             </div>
