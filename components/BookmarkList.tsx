@@ -311,19 +311,7 @@ function csvToBookmarks(csv: string) {
         </div>
       </div>
       <div className="flex-1 space-y-4 sm:space-y-5">
-      {/* Import/Export & Favorites Controls */}
-      <div className="flex flex-wrap gap-2 mb-2 items-center">
-                <button
-                  onClick={() => setShowFavorites(f => !f)}
-                  className={`px-3 py-1.5 rounded text-xs font-semibold border transition ${showFavorites ? 'bg-yellow-400/90 text-yellow-900 border-yellow-400' : 'bg-white/10 text-yellow-300 border-yellow-400/40 hover:bg-yellow-400/20'}`}
-                >
-                  {showFavorites ? 'Show All' : 'Show Favorites'}
-                </button>
-        <button onClick={handleExportCSV} className="px-3 py-1.5 bg-blue-500/80 text-white rounded text-xs font-semibold hover:bg-blue-600/90">Export CSV</button>
-        <button onClick={handleExportJSON} className="px-3 py-1.5 bg-green-500/80 text-white rounded text-xs font-semibold hover:bg-green-600/90">Export JSON</button>
-        <label className="px-3 py-1.5 bg-purple-500/80 text-white rounded text-xs font-semibold hover:bg-purple-600/90 cursor-pointer">
-          Import
-          <input ref={fileInputRef} type="file" accept=".csv,.json" onChange={handleImport} className="hidden" />
+      {/* Removed import/export & favorites controls */}
         </label>
       </div>
       {/* Search Bar */}
