@@ -108,9 +108,7 @@ export default function UserMenu({ user }: UserMenuProps) {
 
             {/* Stats */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Status</p>
               <div className="bg-slate-700/50 rounded-lg p-3 text-center border border-slate-600/50">
-                <p className="text-xs text-gray-400">Status</p>
                 <p className="text-sm font-bold text-green-400">Active</p>
               </div>
             </div>
