@@ -81,9 +81,9 @@ export default function UserMenu({ user }: UserMenuProps) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl z-50 overflow-hidden animate-fadeInUp">
+        <div className="absolute right-0 mt-2 w-72 bg-slate-800/95 backdrop-blur-lg border border-purple-500/50 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeInUp">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-purple-600/30 to-pink-600/30 p-4 border-b border-white/10">
+          <div className="bg-gradient-to-r from-purple-700/80 to-pink-700/80 p-4 border-b border-purple-500/40">
             <div className="flex items-center gap-3">
               {avatarUrl ? (
                 <img
@@ -106,8 +106,8 @@ export default function UserMenu({ user }: UserMenuProps) {
           {/* Profile Info */}
           <div className="p-4 space-y-3">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Account</p>
-              <div className="bg-white/5 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Account</p>
+              <div className="bg-slate-700/50 rounded-lg p-3 space-y-2 border border-slate-600/50">
                 <div>
                   <p className="text-xs text-gray-400">Email</p>
                   <p className="text-sm text-white break-all">{user.email}</p>
@@ -117,8 +117,8 @@ export default function UserMenu({ user }: UserMenuProps) {
 
             {/* Stats */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</p>
-              <div className="bg-white/5 rounded-lg p-3 text-center">
+              <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">Status</p>
+              <div className="bg-slate-700/50 rounded-lg p-3 text-center border border-slate-600/50">
                 <p className="text-xs text-gray-400">Status</p>
                 <p className="text-sm font-bold text-green-400">Active</p>
               </div>
@@ -126,7 +126,7 @@ export default function UserMenu({ user }: UserMenuProps) {
           </div>
 
           {/* Sign Out Button */}
-          <div className="border-t border-white/10 p-3">
+          <div className="border-t border-purple-500/30 p-3">
             <button
               onClick={handleSignOut}
               className="w-full px-4 py-2.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg text-sm font-medium hover:bg-red-500/40 hover:border-red-500/60 transition-all duration-200 flex items-center justify-center gap-2"
