@@ -1,0 +1,325 @@
+"use client";
+
+import { supabase } from "@/lib/supabase";
+import type { Bookmark } from "@/lib/types";
+import { useEffect, useState } from "react";
+
+interface BookmarkListProps {
+  userId: string;
+}
+
+export default function BookmarkList({ userId }: BookmarkListProps) {
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editError, setEditError] = useState("");
+
+  // Filter bookmarks based on search query
+  const filteredBookmarks = bookmarks.filter((bookmark) =>
+    bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    bookmark.url.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  useEffect(() => {
+    // Fetch initial bookmarks
+    fetchBookmarks();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`bookmarks:user_id=eq.${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookmarks",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setBookmarks((prev) => [payload.new as Bookmark, ...prev]);
+          } else if (payload.eventType === "DELETE") {
+            setBookmarks((prev) =>
+              prev.filter((b) => b.id !== (payload.old as Bookmark).id)
+            );
+          } else if (payload.eventType === "UPDATE") {
+            setBookmarks((prev) =>
+              prev.map((b) => (b.id === (payload.new as Bookmark).id ? (payload.new as Bookmark) : b))
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [userId]);
+
+  async function fetchBookmarks() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setBookmarks(data || []);
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteBookmark(id: string) {
+    try {
+      // Optimistically remove from UI
+      setBookmarks((prev) => prev.filter((b) => b.id !== id));
+      
+      const { error } = await supabase.from("bookmarks").delete().eq("id", id);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error deleting bookmark:", error);
+      // Refetch bookmarks if delete failed
+      fetchBookmarks();
+    }
+  }
+
+  async function updateBookmark(id: string) {
+    try {
+      setEditError("");
+
+      if (!editTitle.trim() || !editUrl.trim()) {
+        setEditError("Please fill in both fields");
+        return;
+      }
+
+      // Validate URL
+      try {
+        new URL(editUrl);
+      } catch {
+        setEditError("Please enter a valid URL");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("bookmarks")
+        .update({
+          title: editTitle.trim(),
+          url: editUrl.trim(),
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setBookmarks((prev) =>
+        prev.map((b) =>
+          b.id === id
+            ? { ...b, title: editTitle.trim(), url: editUrl.trim() }
+            : b
+        )
+      );
+
+      setEditingId(null);
+      setEditTitle("");
+      setEditUrl("");
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+      setEditError("Failed to update bookmark");
+    }
+  }
+
+  function startEdit(bookmark: Bookmark) {
+    setEditingId(bookmark.id);
+    setEditTitle(bookmark.title);
+    setEditUrl(bookmark.url);
+    setEditError("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditTitle("");
+    setEditUrl("");
+    setEditError("");
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8 sm:py-12">
+        <div className="text-center">
+          <div className="inline-block p-2 sm:p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full mb-3 sm:mb-4">
+            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-300 text-sm sm:text-base">Loading your bookmarks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (bookmarks.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12 sm:py-16">
+        <div className="text-center px-4">
+          <svg className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+          <p className="text-gray-300 text-base sm:text-lg font-semibold">No bookmarks yet</p>
+          <p className="text-gray-400 text-xs sm:text-sm">Create your first bookmark to get started</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      {/* Search Bar */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search bookmarks..."
+            className="flex-1 bg-transparent text-sm sm:text-base text-white placeholder-gray-400 outline-none"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              title="Clear search"
+              aria-label="Clear search query"
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="text-xs sm:text-sm text-gray-400 mt-2">
+            Found {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+
+      {/* Bookmarks List */}
+      {filteredBookmarks.length === 0 ? (
+        <div className="flex items-center justify-center py-8 sm:py-12">
+          <div className="text-center">
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-gray-300 text-sm sm:text-base">No bookmarks match "{searchQuery}"</p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3 sm:space-y-4">
+          {filteredBookmarks.map((bookmark) => (
+        <div key={bookmark.id}>
+          {editingId === bookmark.id ? (
+            // Edit Form
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 sm:p-5 rounded-lg sm:rounded-xl">
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1 sm:mb-2">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Bookmark title"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1 sm:mb-2">
+                  URL
+                </label>
+                <input
+                  type="text"
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+              {editError && (
+                <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg text-xs sm:text-sm">
+                  {editError}
+                </div>
+              )}
+              <div className="flex gap-2 sm:gap-3">
+                <button
+                  onClick={() => updateBookmark(bookmark.id)}
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg text-xs sm:text-sm font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2 bg-gray-500/20 text-gray-300 border border-gray-500/30 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-500/40 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Display Bookmark
+            <div className="group bg-white/10 backdrop-blur-xl border border-white/20 p-4 sm:p-5 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 hover:border-white/40 hover:shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="p-1.5 sm:p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex-shrink-0 mt-0.5 sm:mt-1">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM9 12a6 6 0 11-12 0 6 6 0 0112 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-base text-white truncate group-hover:text-blue-300 transition">
+                        {bookmark.title}
+                      </h3>
+                      <a
+                        href={bookmark.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs sm:text-sm text-blue-400 hover:text-blue-300 truncate block mt-1 break-all"
+                      >
+                        {bookmark.url}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+                  <button
+                    onClick={() => startEdit(bookmark)}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-500/20 text-blue-300 hover:bg-blue-500/40 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-blue-500/30 hover:border-blue-500/60"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteBookmark(bookmark.id)}
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500/20 text-red-300 hover:bg-red-500/40 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-red-500/30 hover:border-red-500/60"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+        </div>
+      )}
+    </div>
+  );
+}
