@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import type { Folder } from "@/lib/types";
 
 interface AddBookmarkFormProps {
@@ -20,6 +21,35 @@ export default function AddBookmarkForm({
   const [success, setSuccess] = useState("");
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderId, setFolderId] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderLoading, setFolderLoading] = useState(false);
+  const [folderError, setFolderError] = useState("");
+    // Create a new folder
+    async function handleCreateFolder(e: React.FormEvent) {
+      e.preventDefault();
+      setFolderError("");
+      if (!newFolderName.trim()) {
+        setFolderError("Folder name required");
+        return;
+      }
+      setFolderLoading(true);
+      try {
+        const { data, error } = await supabase.from("folders").insert({
+          user_id: userId,
+          name: newFolderName.trim(),
+        }).select();
+        if (error) throw error;
+        if (data && data[0]) {
+          setFolders([data[0], ...folders]);
+          setFolderId(data[0].id);
+          setNewFolderName("");
+        }
+      } catch (err) {
+        setFolderError("Failed to create folder");
+      } finally {
+        setFolderLoading(false);
+      }
+    }
   // Fetch folders for user
   useEffect(() => {
     async function fetchFolders() {
@@ -112,16 +142,34 @@ export default function AddBookmarkForm({
       )}
 
       <div className="space-y-3 sm:space-y-4">
-        {/* Folder selection */}
-        <div>
+        {/* Folder creation and selection */}
+        <div className="mb-2">
+          <form onSubmit={handleCreateFolder} className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              placeholder="New folder name"
+              className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={folderLoading}
+            />
+            <button
+              type="submit"
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+              disabled={folderLoading || !newFolderName.trim()}
+            >
+              {folderLoading ? "Adding..." : "Add Folder"}
+            </button>
+          </form>
+          {folderError && <div className="text-xs text-red-400 mb-1">{folderError}</div>}
           <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1.5 sm:mb-2">
             Folder (optional)
           </label>
           <select
             value={folderId || ""}
             onChange={e => setFolderId(e.target.value || null)}
-            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
-            disabled={loading || folders.length === 0}
+            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loading}
           >
             <option value="">No Folder</option>
             {folders.map(folder => (
