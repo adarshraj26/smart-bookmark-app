@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import type { Bookmark, Folder } from "@/lib/types";
+import type { Bookmark } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 
@@ -12,8 +12,7 @@ interface BookmarkListProps {
 export default function BookmarkList({ userId }: BookmarkListProps) {
 
   // Removed leftover import/export helpers and file input ref
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  // Folder feature removed
     // ...existing code...
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,26 +23,14 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   const [editError, setEditError] = useState("");
   const [showFavorites, setShowFavorites] = useState(false);
 
-  // Fetch folders for user
-  useEffect(() => {
-    async function fetchFolders() {
-      const { data, error } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (!error && data) setFolders(data);
-    }
-    fetchFolders();
-  }, [userId]);
+  // Folder feature removed
 
   // Filter bookmarks by folder and search query
   const filteredBookmarks = bookmarks.filter((bookmark) => {
-    const matchesFolder = selectedFolder ? bookmark.folder_id === selectedFolder : true;
     const matchesQuery = bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFavorite = showFavorites ? bookmark.favorite : true;
-    return matchesFolder && matchesQuery && matchesFavorite;
+    return matchesQuery && matchesFavorite;
   });
   // Toggle favorite status
   async function toggleFavorite(bookmark: Bookmark) {
@@ -213,27 +200,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   // Main return block
   return (
     <div className="flex gap-4">
-      {/* Folders Sidebar */}
-      <div className="hidden sm:block w-48 flex-shrink-0">
-        <div className="bg-white/10 border border-white/20 rounded-xl p-3 mb-4">
-          <div className="font-bold text-white text-sm mb-2">Folders</div>
-          <button
-            className={`block w-full text-left px-2 py-1 rounded mb-1 text-xs font-semibold ${!selectedFolder ? 'bg-blue-600/60 text-white' : 'text-gray-200 hover:bg-white/10'}`}
-            onClick={() => setSelectedFolder(null)}
-          >
-            All Bookmarks
-          </button>
-          {folders.map(folder => (
-            <button
-              key={folder.id}
-              className={`block w-full text-left px-2 py-1 rounded mb-1 text-xs font-semibold ${selectedFolder === folder.id ? 'bg-blue-600/60 text-white' : 'text-gray-200 hover:bg-white/10'}`}
-              onClick={() => setSelectedFolder(folder.id)}
-            >
-              {folder.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Folders Sidebar removed */}
       <div className="flex-1 space-y-4 sm:space-y-5">
       {/* Removed import/export & favorites controls */}
       {/* Search Bar */}
