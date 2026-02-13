@@ -61,16 +61,10 @@ export default function UserMenu({ user }: UserMenuProps) {
           className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-300 transition-transform duration-200 hidden sm:block ${
             isOpen ? "rotate-180" : ""
           }`}
-          fill="none"
-          stroke="currentColor"
+          fill="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-          />
+          <path d="M7 10l5 5 5-5z" />
         </svg>
       </button>
 
@@ -80,11 +74,19 @@ export default function UserMenu({ user }: UserMenuProps) {
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-purple-700/80 to-pink-700/80 p-4 border-b border-purple-500/40">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400">
-                <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-400"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400">
+                  <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-sm truncate">{displayName}</p>
                 <p className="text-gray-300 text-xs truncate">{user.email}</p>
