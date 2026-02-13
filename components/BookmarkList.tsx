@@ -302,13 +302,13 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
                 <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
                   <button
                     onClick={() => startEdit(bookmark)}
-                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-500/20 text-blue-300 hover:bg-blue-500/40 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-blue-500/30 hover:border-blue-500/60"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600/50 text-blue-200 hover:bg-blue-600/70 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-blue-600/60 hover:border-blue-600/80"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => deleteBookmark(bookmark.id)}
-                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-500/20 text-red-300 hover:bg-red-500/40 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-red-500/30 hover:border-red-500/60"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-red-600/50 text-red-200 hover:bg-red-600/70 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-red-600/60 hover:border-red-600/80"
                   >
                     Delete
                   </button>
