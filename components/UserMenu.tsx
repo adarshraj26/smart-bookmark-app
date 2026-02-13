@@ -47,22 +47,23 @@ export default function UserMenu({ user }: UserMenuProps) {
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
         aria-label="User menu"
+        title="Click to open profile menu"
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt={displayName}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-purple-400"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-purple-400 shadow-lg hover:shadow-purple-500/50 shadow-purple-500/30"
           />
         ) : (
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400">
-            <span className="text-xs sm:text-sm font-bold text-white">{initials}</span>
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400 shadow-lg hover:shadow-purple-500/50 shadow-purple-500/30">
+            <span className="text-sm font-bold text-white">{initials}</span>
           </div>
         )}
         <svg
-          className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-300 transition-transform duration-200 ${
+          className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-300 transition-transform duration-200 hidden sm:block ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
