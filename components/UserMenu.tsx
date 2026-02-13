@@ -51,17 +51,12 @@ export default function UserMenu({ user }: UserMenuProps) {
         aria-label="User menu"
         title="Click to open profile menu"
       >
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={displayName}
-            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-purple-400 shadow-lg hover:shadow-purple-500/50 shadow-purple-500/30"
-          />
-        ) : (
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400 shadow-lg hover:shadow-purple-500/50 shadow-purple-500/30">
-            <span className="text-sm font-bold text-white">{initials}</span>
-          </div>
-        )}
+        {/* Profile Icon */}
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400 shadow-lg hover:shadow-purple-500/50 shadow-purple-500/30">
+          <svg className="w-6 h-6 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+          </svg>
+        </div>
         <svg
           className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-300 transition-transform duration-200 hidden sm:block ${
             isOpen ? "rotate-180" : ""
@@ -85,17 +80,11 @@ export default function UserMenu({ user }: UserMenuProps) {
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-purple-700/80 to-pink-700/80 p-4 border-b border-purple-500/40">
             <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-400"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400">
-                  <span className="text-sm font-bold text-white">{initials}</span>
-                </div>
-              )}
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center border-2 border-purple-400">
+                <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-sm truncate">{displayName}</p>
                 <p className="text-gray-300 text-xs truncate">{user.email}</p>
