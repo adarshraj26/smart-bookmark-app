@@ -3,6 +3,7 @@
 import AddBookmarkForm from "@/components/AddBookmarkForm";
 import AuthForm from "@/components/AuthForm";
 import BookmarkList from "@/components/BookmarkList";
+import LoadingScreen from "@/components/LoadingScreen";
 import UserMenu from "@/components/UserMenu";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@/lib/types";
@@ -58,16 +59,7 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="text-center">
-          <div className="inline-block p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full mb-4">
-            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-          </div>
-          <p className="text-white text-sm sm:text-base">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
