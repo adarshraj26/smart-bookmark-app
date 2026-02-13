@@ -203,6 +203,15 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       {/* Folders Sidebar removed */}
       <div className="flex-1 space-y-4 sm:space-y-5">
       {/* Removed import/export & favorites controls */}
+      {/* Favorites Toggle */}
+      <div className="flex items-center justify-end mb-2">
+        <button
+          onClick={() => setShowFavorites((prev) => !prev)}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition ${showFavorites ? 'bg-yellow-400/90 text-yellow-900 border-yellow-400' : 'bg-white/10 text-yellow-300 border-yellow-400/40 hover:bg-yellow-400/20'}`}
+        >
+          {showFavorites ? 'Showing Favorites' : 'Show Favorites'}
+        </button>
+      </div>
       {/* Search Bar */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
         <div className="flex items-center gap-2 sm:gap-3">
