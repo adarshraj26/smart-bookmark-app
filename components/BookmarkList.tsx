@@ -11,26 +11,7 @@ interface BookmarkListProps {
 
 export default function BookmarkList({ userId }: BookmarkListProps) {
 
-// Helper: Convert bookmarks to CSV
-function bookmarksToCSV(bookmarks: any[]) {
-  const header = ["title", "url", "created_at"];
-  const rows = bookmarks.map(b => [b.title, b.url, b.created_at]);
-  return [header.join(","), ...rows.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(","))].join("\n");
-}
-
-// Helper: Parse CSV to bookmarks
-function csvToBookmarks(csv: string) {
-  const [header, ...lines] = csv.trim().split(/\r?\n/);
-  const keys = header.split(",").map(k => k.replace(/"/g, ""));
-  return lines.map(line => {
-    const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, "").replace(/""/g, '"')) || [];
-    const obj: any = {};
-    keys.forEach((k, i) => obj[k] = values[i]);
-    return obj;
-  });
-}
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Removed leftover import/export helpers and file input ref
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
     // Export bookmarks as CSV
