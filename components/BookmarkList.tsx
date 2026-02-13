@@ -4,8 +4,12 @@ import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
 import { useEffect, useState, useRef } from "react";
 
+
+interface BookmarkListProps {
   userId: string;
 }
+
+export default function BookmarkList({ userId }: BookmarkListProps) {
 
 // Helper: Convert bookmarks to CSV
 function bookmarksToCSV(bookmarks: any[]) {
