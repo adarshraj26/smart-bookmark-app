@@ -59,8 +59,13 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="text-center">
+          <div className="inline-block p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full mb-4">
+            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          </div>
+          <p className="text-white text-sm sm:text-base">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -91,7 +96,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5">
           <div className="flex items-center justify-between gap-4">
@@ -110,7 +115,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-8 sm:py-12">
+      <main className="flex-1 max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-8 sm:py-12 w-full">
         <div className="space-y-6 sm:space-y-8">
           <AddBookmarkForm
             userId={user.id}

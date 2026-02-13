@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Smart Bookmark App",
   description: "Manage your bookmarks with real-time synchronization",
+  viewport: "width=device-width, initial-scale=1.0, maximum-scale=5.0",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50">{children}</body>
+      <body className="m-0 p-0 w-full h-full overflow-x-hidden bg-slate-900">{children}</body>
     </html>
   );
 }
