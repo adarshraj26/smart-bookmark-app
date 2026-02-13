@@ -312,7 +312,6 @@ function csvToBookmarks(csv: string) {
       </div>
       <div className="flex-1 space-y-4 sm:space-y-5">
       {/* Removed import/export & favorites controls */}
-        </label>
       </div>
       {/* Search Bar */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
