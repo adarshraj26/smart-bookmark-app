@@ -112,27 +112,15 @@ export default function UserMenu({ user }: UserMenuProps) {
                   <p className="text-xs text-gray-400">Email</p>
                   <p className="text-sm text-white break-all">{user.email}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400">User ID</p>
-                  <p className="text-xs text-gray-300 font-mono break-all">{user.id.substring(0, 12)}...</p>
-                </div>
               </div>
             </div>
 
             {/* Stats */}
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400">Status</p>
-                  <p className="text-sm font-bold text-green-400">Active</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400">Auth Type</p>
-                  <p className="text-sm font-bold text-blue-400">
-                    {avatarUrl ? "OAuth" : "Email"}
-                  </p>
-                </div>
+              <div className="bg-white/5 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-400">Status</p>
+                <p className="text-sm font-bold text-green-400">Active</p>
               </div>
             </div>
           </div>
