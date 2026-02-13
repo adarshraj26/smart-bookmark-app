@@ -1,7 +1,8 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { Folder } from "@/lib/types";
 
 interface AddBookmarkFormProps {
   userId: string;
@@ -17,6 +18,20 @@ export default function AddBookmarkForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  // Fetch folders for user
+  useEffect(() => {
+    async function fetchFolders() {
+      const { data, error } = await supabase
+        .from("folders")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (!error && data) setFolders(data);
+    }
+    fetchFolders();
+  }, [userId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +58,7 @@ export default function AddBookmarkForm({
         user_id: userId,
         url: url.trim(),
         title: title.trim(),
+        folder_id: folderId || null,
       });
 
       if (error) throw error;
@@ -50,6 +66,7 @@ export default function AddBookmarkForm({
       setSuccess("Bookmark added successfully!");
       setUrl("");
       setTitle("");
+      setFolderId(null);
       onBookmarkAdded?.();
 
       setTimeout(() => setSuccess(""), 3000);
@@ -95,6 +112,23 @@ export default function AddBookmarkForm({
       )}
 
       <div className="space-y-3 sm:space-y-4">
+        {/* Folder selection */}
+        <div>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1.5 sm:mb-2">
+            Folder (optional)
+          </label>
+          <select
+            value={folderId || ""}
+            onChange={e => setFolderId(e.target.value || null)}
+            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+            disabled={loading || folders.length === 0}
+          >
+            <option value="">No Folder</option>
+            {folders.map(folder => (
+              <option key={folder.id} value={folder.id}>{folder.name}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1.5 sm:mb-2">
             Title

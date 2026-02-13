@@ -1,14 +1,93 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import type { Bookmark } from "@/lib/types";
-import { useEffect, useState } from "react";
+import type { Bookmark, Folder } from "@/lib/types";
+import { useEffect, useState, useRef } from "react";
 
-interface BookmarkListProps {
   userId: string;
 }
 
-export default function BookmarkList({ userId }: BookmarkListProps) {
+// Helper: Convert bookmarks to CSV
+function bookmarksToCSV(bookmarks: any[]) {
+  const header = ["title", "url", "created_at"];
+  const rows = bookmarks.map(b => [b.title, b.url, b.created_at]);
+  return [header.join(","), ...rows.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(","))].join("\n");
+}
+
+// Helper: Parse CSV to bookmarks
+function csvToBookmarks(csv: string) {
+  const [header, ...lines] = csv.trim().split(/\r?\n/);
+  const keys = header.split(",").map(k => k.replace(/"/g, ""));
+  return lines.map(line => {
+    const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, "").replace(/""/g, '"')) || [];
+    const obj: any = {};
+    keys.forEach((k, i) => obj[k] = values[i]);
+    return obj;
+  });
+}
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+    // Export bookmarks as CSV
+    function handleExportCSV() {
+      const csv = bookmarksToCSV(bookmarks);
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bookmarks.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Export bookmarks as JSON
+    function handleExportJSON() {
+      const blob = new Blob([JSON.stringify(bookmarks, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bookmarks.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Import bookmarks from file
+    async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const text = await file.text();
+      let imported: any[] = [];
+      try {
+        if (ext === "json") {
+          imported = JSON.parse(text);
+        } else if (ext === "csv") {
+          imported = csvToBookmarks(text);
+        } else {
+          alert("Unsupported file type. Use CSV or JSON.");
+          return;
+        }
+        // Insert bookmarks (ignore missing title/url)
+        const toInsert = imported.filter(b => b.title && b.url).map(b => ({
+          user_id: userId,
+          title: b.title,
+          url: b.url,
+        }));
+        if (toInsert.length) {
+          const { error } = await supabase.from("bookmarks").insert(toInsert);
+          if (error) throw error;
+          fetchBookmarks();
+          alert(`Imported ${toInsert.length} bookmarks!`);
+        } else {
+          alert("No valid bookmarks found in file.");
+        }
+      } catch (err) {
+        alert("Failed to import bookmarks: " + err);
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    }
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,12 +95,39 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editError, setEditError] = useState("");
+  const [showFavorites, setShowFavorites] = useState(false);
 
-  // Filter bookmarks based on search query
-  const filteredBookmarks = bookmarks.filter((bookmark) =>
-    bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    bookmark.url.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch folders for user
+  useEffect(() => {
+    async function fetchFolders() {
+      const { data, error } = await supabase
+        .from("folders")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (!error && data) setFolders(data);
+    }
+    fetchFolders();
+  }, [userId]);
+
+  // Filter bookmarks by folder and search query
+  const filteredBookmarks = bookmarks.filter((bookmark) => {
+    const matchesFolder = selectedFolder ? bookmark.folder_id === selectedFolder : true;
+    const matchesQuery = bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFavorite = showFavorites ? bookmark.favorite : true;
+    return matchesFolder && matchesQuery && matchesFavorite;
+  });
+  // Toggle favorite status
+  async function toggleFavorite(bookmark: Bookmark) {
+    const { error } = await supabase
+      .from("bookmarks")
+      .update({ favorite: !bookmark.favorite })
+      .eq("id", bookmark.id);
+    if (!error) {
+      setBookmarks((prev) => prev.map((b) => b.id === bookmark.id ? { ...b, favorite: !bookmark.favorite } : b));
+    }
+  }
 
   useEffect(() => {
     // Fetch initial bookmarks
@@ -178,7 +284,44 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div className="flex gap-4">
+      {/* Folders Sidebar */}
+      <div className="hidden sm:block w-48 flex-shrink-0">
+        <div className="bg-white/10 border border-white/20 rounded-xl p-3 mb-4">
+          <div className="font-bold text-white text-sm mb-2">Folders</div>
+          <button
+            className={`block w-full text-left px-2 py-1 rounded mb-1 text-xs font-semibold ${!selectedFolder ? 'bg-blue-600/60 text-white' : 'text-gray-200 hover:bg-white/10'}`}
+            onClick={() => setSelectedFolder(null)}
+          >
+            All Bookmarks
+          </button>
+          {folders.map(folder => (
+            <button
+              key={folder.id}
+              className={`block w-full text-left px-2 py-1 rounded mb-1 text-xs font-semibold ${selectedFolder === folder.id ? 'bg-blue-600/60 text-white' : 'text-gray-200 hover:bg-white/10'}`}
+              onClick={() => setSelectedFolder(folder.id)}
+            >
+              {folder.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 space-y-4 sm:space-y-5">
+      {/* Import/Export & Favorites Controls */}
+      <div className="flex flex-wrap gap-2 mb-2 items-center">
+                <button
+                  onClick={() => setShowFavorites(f => !f)}
+                  className={`px-3 py-1.5 rounded text-xs font-semibold border transition ${showFavorites ? 'bg-yellow-400/90 text-yellow-900 border-yellow-400' : 'bg-white/10 text-yellow-300 border-yellow-400/40 hover:bg-yellow-400/20'}`}
+                >
+                  {showFavorites ? 'Show All' : 'Show Favorites'}
+                </button>
+        <button onClick={handleExportCSV} className="px-3 py-1.5 bg-blue-500/80 text-white rounded text-xs font-semibold hover:bg-blue-600/90">Export CSV</button>
+        <button onClick={handleExportJSON} className="px-3 py-1.5 bg-green-500/80 text-white rounded text-xs font-semibold hover:bg-green-600/90">Export JSON</button>
+        <label className="px-3 py-1.5 bg-purple-500/80 text-white rounded text-xs font-semibold hover:bg-purple-600/90 cursor-pointer">
+          Import
+          <input ref={fileInputRef} type="file" accept=".csv,.json" onChange={handleImport} className="hidden" />
+        </label>
+      </div>
       {/* Search Bar */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -299,7 +442,17 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+                <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto items-center">
+                  {/* Favorite/Star toggle */}
+                  <button
+                    onClick={() => toggleFavorite(bookmark)}
+                    title={bookmark.favorite ? "Unstar" : "Star"}
+                    className={`p-2 rounded-full border transition ${bookmark.favorite ? 'bg-yellow-400/90 text-yellow-900 border-yellow-400' : 'bg-white/10 text-yellow-300 border-yellow-400/40 hover:bg-yellow-400/20'}`}
+                  >
+                    <svg className="w-4 h-4" fill={bookmark.favorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l2.036 6.29a1 1 0 00.95.69h6.6c.969 0 1.371 1.24.588 1.81l-5.347 3.89a1 1 0 00-.364 1.118l2.036 6.29c.3.921-.755 1.688-1.54 1.118l-5.347-3.89a1 1 0 00-1.176 0l-5.347 3.89c-.784.57-1.838-.197-1.54-1.118l2.036-6.29a1 1 0 00-.364-1.118l-5.347-3.89c-.783-.57-.38-1.81.588-1.81h6.6a1 1 0 00.95-.69l2.036-6.29z" />
+                    </svg>
+                  </button>
                   <button
                     onClick={() => startEdit(bookmark)}
                     className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600/50 text-blue-200 hover:bg-blue-600/70 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border border-blue-600/60 hover:border-blue-600/80 flex items-center justify-center gap-2"
@@ -326,6 +479,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

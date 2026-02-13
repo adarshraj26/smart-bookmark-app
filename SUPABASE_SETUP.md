@@ -33,20 +33,33 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable__NU4YBHhnzPe7hF5lYca8g_CtGz0LWA
 3. Copy and paste this SQL:
 
 ```sql
--- Create bookmarks table
+-- Create folders table
+CREATE TABLE folders (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create bookmarks table (with folder_id)
 CREATE TABLE bookmarks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   title TEXT NOT NULL,
+  folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
+  favorite BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create index for faster queries
+-- Create indexes for faster queries
 CREATE INDEX idx_bookmarks_user_id ON bookmarks(user_id);
+CREATE INDEX idx_bookmarks_folder_id ON bookmarks(folder_id);
+CREATE INDEX idx_folders_user_id ON folders(user_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE folders ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Users can only SELECT their own bookmarks
 CREATE POLICY "Users can view own bookmarks"
@@ -58,6 +71,16 @@ CREATE POLICY "Users can insert own bookmarks"
   ON bookmarks FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- RLS Policy: Users can only SELECT their own folders
+CREATE POLICY "Users can view own folders"
+  ON folders FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- RLS Policy: Users can only INSERT their own folders
+CREATE POLICY "Users can insert own folders"
+  ON folders FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+```
 -- RLS Policy: Users can only DELETE their own bookmarks
 CREATE POLICY "Users can delete own bookmarks"
   ON bookmarks FOR DELETE
