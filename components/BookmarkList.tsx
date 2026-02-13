@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 
 interface BookmarkListProps {
@@ -14,65 +14,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   // Removed leftover import/export helpers and file input ref
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-    // Export bookmarks as CSV
-    function handleExportCSV() {
-      const csv = bookmarksToCSV(bookmarks);
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "bookmarks.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Export bookmarks as JSON
-    function handleExportJSON() {
-      const blob = new Blob([JSON.stringify(bookmarks, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "bookmarks.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Import bookmarks from file
-    async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      const text = await file.text();
-      let imported: any[] = [];
-      try {
-        if (ext === "json") {
-          imported = JSON.parse(text);
-        } else if (ext === "csv") {
-          imported = csvToBookmarks(text);
-        } else {
-          alert("Unsupported file type. Use CSV or JSON.");
-          return;
-        }
-        // Insert bookmarks (ignore missing title/url)
-        const toInsert = imported.filter(b => b.title && b.url).map(b => ({
-          user_id: userId,
-          title: b.title,
-          url: b.url,
-        }));
-        if (toInsert.length) {
-          const { error } = await supabase.from("bookmarks").insert(toInsert);
-          if (error) throw error;
-          fetchBookmarks();
-          alert(`Imported ${toInsert.length} bookmarks!`);
-        } else {
-          alert("No valid bookmarks found in file.");
-        }
-      } catch (err) {
-        alert("Failed to import bookmarks: " + err);
-      } finally {
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-    }
+    // ...existing code...
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -268,6 +210,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
     );
   }
 
+  // Main return block
   return (
     <div className="flex gap-4">
       {/* Folders Sidebar */}
@@ -293,7 +236,6 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       </div>
       <div className="flex-1 space-y-4 sm:space-y-5">
       {/* Removed import/export & favorites controls */}
-      </div>
       {/* Search Bar */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-3 sm:p-4 rounded-lg sm:rounded-xl">
         <div className="flex items-center gap-2 sm:gap-3">
