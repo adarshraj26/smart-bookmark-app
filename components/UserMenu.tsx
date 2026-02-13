@@ -128,9 +128,9 @@ export default function UserMenu({ user }: UserMenuProps) {
                   <p className="text-sm font-bold text-green-400">Active</p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-xs text-gray-400">Provider</p>
-                  <p className="text-sm font-bold text-blue-400 capitalize">
-                    {user.user_metadata?.provider || "Email"}
+                  <p className="text-xs text-gray-400">Auth Type</p>
+                  <p className="text-sm font-bold text-blue-400">
+                    {avatarUrl ? "OAuth" : "Email"}
                   </p>
                 </div>
               </div>
