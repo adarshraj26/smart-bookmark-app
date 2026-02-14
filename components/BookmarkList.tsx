@@ -191,18 +191,20 @@ export default function BookmarkList({
         {filteredBookmarks.map((bookmark) => (
           <div
             key={bookmark.id}
-            className="bg-white/10 p-4 rounded-xl text-white"
+            className="bg-white/10 p-4 rounded-xl text-white flex items-center justify-between"
           >
-            <h3 className="font-semibold">{bookmark.title}</h3>
-            <a
-              href={bookmark.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400"
-            >
-              {bookmark.url}
-            </a>
-            <div className="mt-3 flex gap-2">
+            <div>
+              <h3 className="font-semibold">{bookmark.title}</h3>
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400"
+              >
+                {bookmark.url}
+              </a>
+            </div>
+            <div className="flex gap-2 ml-4">
               <button
                 onClick={() => {
                   setEditingId(bookmark.id);
@@ -215,15 +217,9 @@ export default function BookmarkList({
                 Edit
               </button>
               <button
-                onClick={async () => {
-                  if (window.confirm('Delete this bookmark?')) {
-                    try {
-                      await supabase.from('bookmarks').delete().eq('id', bookmark.id);
-                      setBookmarks((prev) => prev.filter((b) => b.id !== bookmark.id));
-                    } catch (error) {
-                      alert('Failed to delete bookmark');
-                    }
-                  }
+                onClick={() => {
+                  setFolderToDelete(bookmark); // reuse folderToDelete for bookmark modal
+                  setDeleteModalOpen(true);
                 }}
                 className="px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
               >
@@ -231,6 +227,50 @@ export default function BookmarkList({
               </button>
             </div>
           </div>
+              {/* Bookmark Delete Modal */}
+              <Transition appear show={deleteModalOpen && folderToDelete && folderToDelete.url} as={Fragment}>
+                <Dialog
+                  as="div"
+                  className="relative z-50"
+                  onClose={() => setDeleteModalOpen(false)}
+                >
+                  <div className="fixed inset-0 bg-black/40" />
+                  <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
+                      <Dialog.Title className="text-lg font-bold mb-4">
+                        Delete Bookmark
+                      </Dialog.Title>
+                      <p className="mb-4">
+                        Are you sure you want to delete
+                        <span className="text-red-400 font-bold"> {folderToDelete?.title} </span>?
+                      </p>
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() => setDeleteModalOpen(false)}
+                          className="px-4 py-2 bg-gray-600 rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await supabase.from('bookmarks').delete().eq('id', folderToDelete.id);
+                              setBookmarks((prev) => prev.filter((b) => b.id !== folderToDelete.id));
+                              setDeleteModalOpen(false);
+                              setFolderToDelete(null);
+                            } catch (error) {
+                              alert('Failed to delete bookmark');
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600 rounded-lg"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </Dialog.Panel>
+                  </div>
+                </Dialog>
+              </Transition>
         ))}
       </div>
 
