@@ -125,7 +125,7 @@ export default function BookmarkList({
           <div className="font-bold text-lg mb-2">Folders</div>
 
           <form
-            className="flex gap-2 mb-4"
+            className="flex items-center gap-2 mb-4 bg-white/10 rounded-lg px-2 py-1 backdrop-blur-md"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!newFolderName.trim()) return;
@@ -142,12 +142,12 @@ export default function BookmarkList({
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              className="flex-1 px-2 py-1 rounded bg-white/20 text-white"
+              className="flex-1 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
               placeholder="New folder"
             />
             <button
               type="submit"
-              className="px-3 py-1 bg-green-600 rounded-lg text-xs"
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm shadow transition"
             >
               Add
             </button>
@@ -203,63 +203,58 @@ export default function BookmarkList({
               >
                 {editingId === bookmark.id ? (
                   <form
-                    className="flex flex-col gap-2"
+                    className="flex-1 flex flex-col gap-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/20"
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleUpdate(bookmark);
                     }}
                   >
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={(e) =>
-                        setEditTitle(e.target.value)
-                      }
-                      className="px-2 py-1 rounded bg-white/20"
-                      required
-                    />
-
-                    <input
-                      type="url"
-                      value={editUrl}
-                      onChange={(e) =>
-                        setEditUrl(e.target.value)
-                      }
-                      className="px-2 py-1 rounded bg-white/20"
-                      required
-                    />
-
-                    <select
-                      value={editFolder || ""}
-                      onChange={(e) =>
-                        setEditFolder(
-                          e.target.value || null
-                        )
-                      }
-                      className="px-2 py-1 rounded bg-white/20"
-                    >
-                      <option value="">No Folder</option>
-                      {folders.map((folder) => (
-                        <option
-                          key={folder.id}
-                          value={folder.id}
-                        >
-                          {folder.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-white/80 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="px-4 py-2 rounded-xl bg-white/30 text-white placeholder-gray-300 outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
+                        placeholder="Bookmark title"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-white/80 mb-1">URL</label>
+                      <input
+                        type="url"
+                        value={editUrl}
+                        onChange={(e) => setEditUrl(e.target.value)}
+                        className="px-4 py-2 rounded-xl bg-white/30 text-white placeholder-gray-300 outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
+                        placeholder="https://example.com"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-white/80 mb-1">Folder</label>
+                      <select
+                        value={editFolder || ""}
+                        onChange={(e) => setEditFolder(e.target.value || null)}
+                        className="px-4 py-2 rounded-xl bg-white/30 text-white outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
+                      >
+                        <option value="">No Folder</option>
+                        {folders.map((folder) => (
+                          <option key={folder.id} value={folder.id}>{folder.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-3 mt-2">
                       <button
                         type="submit"
-                        className="px-3 py-1 bg-green-600 rounded-lg text-xs"
+                        className="px-5 py-2 bg-green-500/90 hover:bg-green-600 text-white rounded-xl font-semibold text-sm shadow transition"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="px-3 py-1 bg-gray-600 rounded-lg text-xs"
+                        className="px-5 py-2 bg-gray-600/80 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm shadow transition"
                       >
                         Cancel
                       </button>
