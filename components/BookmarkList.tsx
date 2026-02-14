@@ -21,10 +21,14 @@ export default function BookmarkList({
   const [loading, setLoading] = useState(true);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [folderToDelete, setFolderToDelete] = useState<Bookmark | Folder | null>(null);
+  const [itemToDelete, setItemToDelete] =
+    useState<Bookmark | Folder | null>(null);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const [editFolder, setEditFolder] = useState<string | null>(null);
+
   // ================= FETCH =================
 
   async function fetchBookmarks() {
@@ -34,6 +38,7 @@ export default function BookmarkList({
         .from("bookmarks")
         .select("*")
         .eq("user_id", userId);
+
       if (error) throw error;
       setBookmarks(data || []);
     } catch (err) {
@@ -42,12 +47,62 @@ export default function BookmarkList({
     setLoading(false);
   }
 
+  useEffect(() => {
+    fetchBookmarks();
+  }, [userId]);
+
+  // ================= DELETE =================
+
+  async function handleDeleteConfirmed() {
+    if (!itemToDelete) return;
+
+    try {
+      if (isBookmark(itemToDelete)) {
+        await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("id", itemToDelete.id);
+
+        setBookmarks((prev) =>
+          prev.filter((b) => b.id !== itemToDelete.id)
+        );
+      } else {
+        await supabase
+          .from("bookmarks")
+          .update({ folder_id: null })
+          .eq("folder_id", itemToDelete.id);
+
+        await supabase
+          .from("folders")
+          .delete()
+          .eq("id", itemToDelete.id);
+
+        if (selectedFolder === itemToDelete.id) {
+          setSelectedFolder(null);
+        }
+
+        fetchFolders();
+        fetchBookmarks();
+      }
+
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      alert("Failed to delete");
+    }
+  }
+
+  if (loading) {
+    return <div className="text-white">Loading...</div>;
+  }
+
   return (
     <>
-      {/* Bookmarks */}
       <div className="flex-1 space-y-4">
         {bookmarks
-          .filter(b => !selectedFolder || b.folder_id === selectedFolder)
+          .filter(
+            (b) => !selectedFolder || b.folder_id === selectedFolder
+          )
           .map((bookmark) => (
             <div
               key={bookmark.id}
@@ -59,52 +114,90 @@ export default function BookmarkList({
                   onSubmit={async (e) => {
                     e.preventDefault();
                     try {
-                      await supabase.from('bookmarks').update({
-                        title: editTitle.trim(),
-                        url: editUrl.trim(),
-                        folder_id: editFolder || null,
-                      }).eq('id', bookmark.id);
-                      setBookmarks((prev) => prev.map((b) => b.id === bookmark.id ? { ...b, title: editTitle.trim(), url: editUrl.trim(), folder_id: editFolder || null } : b));
+                      await supabase
+                        .from("bookmarks")
+                        .update({
+                          title: editTitle.trim(),
+                          url: editUrl.trim(),
+                          folder_id: editFolder || null,
+                        })
+                        .eq("id", bookmark.id);
+
+                      setBookmarks((prev) =>
+                        prev.map((b) =>
+                          b.id === bookmark.id
+                            ? {
+                                ...b,
+                                title: editTitle.trim(),
+                                url: editUrl.trim(),
+                                folder_id: editFolder || null,
+                              }
+                            : b
+                        )
+                      );
+
                       setEditingId(null);
-                    } catch (error) {
-                      alert('Failed to update bookmark');
+                    } catch {
+                      alert("Failed to update bookmark");
                     }
                   }}
                 >
                   <input
                     type="text"
                     value={editTitle}
-                    onChange={e => setEditTitle(e.target.value)}
-                    className="mb-1 px-2 py-1 rounded bg-white/20 text-white placeholder-gray-300 outline-none"
-                    placeholder="Title"
+                    onChange={(e) =>
+                      setEditTitle(e.target.value)
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
                     required
                   />
+
                   <input
                     type="url"
                     value={editUrl}
-                    onChange={e => setEditUrl(e.target.value)}
-                    className="mb-1 px-2 py-1 rounded bg-white/20 text-white placeholder-gray-300 outline-none"
-                    placeholder="URL"
+                    onChange={(e) =>
+                      setEditUrl(e.target.value)
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
                     required
                   />
+
                   <select
-                    value={editFolder || ''}
-                    onChange={e => setEditFolder(e.target.value || null)}
-                    className="mb-2 px-2 py-1 rounded bg-white/20 text-white"
-                    title="Select folder"
+                    value={editFolder || ""}
+                    onChange={(e) =>
+                      setEditFolder(
+                        e.target.value || null
+                      )
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
                   >
-                    <option value="">No Folder</option>
-                    {folders.map(folder => (
-                      <option key={folder.id} value={folder.id}>{folder.name}</option>
+                    <option value="">
+                      No Folder
+                    </option>
+                    {folders.map((folder) => (
+                      <option
+                        key={folder.id}
+                        value={folder.id}
+                      >
+                        {folder.name}
+                      </option>
                     ))}
                   </select>
-                  <div className="flex gap-2 mt-1">
-                    <button type="submit" className="px-3 py-1 bg-green-600/80 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="px-3 py-1 bg-green-600 rounded-lg text-xs"
+                    >
                       Save
                     </button>
-                    <button type="button" onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-600/80 text-white rounded-lg text-xs font-semibold hover:bg-gray-700 transition flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingId(null)
+                      }
+                      className="px-3 py-1 bg-gray-600 rounded-lg text-xs"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -112,7 +205,9 @@ export default function BookmarkList({
               ) : (
                 <>
                   <div>
-                    <h3 className="font-semibold">{bookmark.title}</h3>
+                    <h3 className="font-semibold">
+                      {bookmark.title}
+                    </h3>
                     <a
                       href={bookmark.url}
                       target="_blank"
@@ -122,30 +217,31 @@ export default function BookmarkList({
                       {bookmark.url}
                     </a>
                   </div>
+
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => {
                         setEditingId(bookmark.id);
                         setEditTitle(bookmark.title);
                         setEditUrl(bookmark.url);
-                        setEditFolder(bookmark.folder_id || null);
+                        setEditFolder(
+                          bookmark.folder_id ||
+                            null
+                        );
                       }}
-                      className="flex items-center gap-1 px-3 py-1 bg-blue-600/80 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
-                      title="Edit"
+                      className="px-3 py-1 bg-blue-600 rounded-lg text-xs"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      <span>Edit</span>
+                      Edit
                     </button>
+
                     <button
                       onClick={() => {
-                        setFolderToDelete(bookmark); // reuse folderToDelete for bookmark modal
+                        setItemToDelete(bookmark);
                         setDeleteModalOpen(true);
                       }}
-                      className="flex items-center gap-1 px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
-                      title="Delete"
+                      className="px-3 py-1 bg-red-600 rounded-lg text-xs"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      <span>Delete</span>
+                      Delete
                     </button>
                   </div>
                 </>
@@ -154,58 +250,51 @@ export default function BookmarkList({
           ))}
       </div>
 
-      {/* Bookmark/Folder Delete Modal */}
-      {deleteModalOpen && folderToDelete && (
+      {/* Delete Modal */}
+      {deleteModalOpen && itemToDelete && (
         <Dialog
-          as="div"
-          className="relative z-50"
           open={deleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
+          onClose={() =>
+            setDeleteModalOpen(false)
+          }
+          className="fixed inset-0 z-50 flex items-center justify-center"
         >
           <div className="fixed inset-0 bg-black/40" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
-              <Dialog.Title className="text-lg font-bold mb-4">
-                {isBookmark(folderToDelete) ? 'Delete Bookmark' : 'Delete Folder'}
-              </Dialog.Title>
-              <p className="mb-4">
-                Are you sure you want to delete
-                <span className="text-red-400 font-bold"> {isBookmark(folderToDelete) ? folderToDelete.title : folderToDelete.name} </span>?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-gray-600 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      if (isBookmark(folderToDelete)) {
-                        // Bookmark delete
-                        await supabase.from('bookmarks').delete().eq('id', folderToDelete.id);
-                        setBookmarks((prev) => prev.filter((b) => b.id !== folderToDelete.id));
-                      } else {
-                        // Folder delete
-                        await supabase.from('bookmarks').update({ folder_id: null }).eq('folder_id', folderToDelete.id);
-                        await supabase.from('folders').delete().eq('id', folderToDelete.id);
-                        if (selectedFolder === folderToDelete.id) setSelectedFolder(null);
-                        fetchFolders();
-                        fetchBookmarks();
-                      }
-                      setDeleteModalOpen(false);
-                      setFolderToDelete(null);
-                    } catch (error) {
-                      alert('Failed to delete');
-                    }
-                  }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
-                >
-                  Delete
-                </button>
-              </div>
-            </Dialog.Panel>
+
+          <div className="relative bg-slate-900 p-6 rounded-xl text-white">
+            <h3 className="text-lg font-bold mb-4">
+              {isBookmark(itemToDelete)
+                ? "Delete Bookmark"
+                : "Delete Folder"}
+            </h3>
+
+            <p className="mb-6">
+              Are you sure you want to delete{" "}
+              <span className="text-red-400 font-bold">
+                {isBookmark(itemToDelete)
+                  ? itemToDelete.title
+                  : itemToDelete.name}
+              </span>
+              ?
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() =>
+                  setDeleteModalOpen(false)
+                }
+                className="px-4 py-2 bg-gray-600 rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleDeleteConfirmed}
+                className="px-4 py-2 bg-red-600 rounded-lg"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </Dialog>
       )}
@@ -213,10 +302,9 @@ export default function BookmarkList({
   );
 }
 
-      )}
-    }
-
-// Type guard for Bookmark
-function isBookmark(item: Bookmark | Folder): item is Bookmark {
+// Type Guard
+function isBookmark(
+  item: Bookmark | Folder
+): item is Bookmark {
   return (item as Bookmark).url !== undefined;
 }
