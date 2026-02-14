@@ -11,6 +11,7 @@ interface AddBookmarkFormProps {
   onBookmarkAdded?: () => void;
 }
 
+export default function AddBookmarkForm({
   userId,
   folders,
   fetchFolders,
