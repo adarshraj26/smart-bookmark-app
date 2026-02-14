@@ -89,79 +89,15 @@ export default function AuthForm() {
         </svg>
         <span>Sign in with Google</span>
       </button>
-
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex-1 h-px bg-white/30"></div>
-        <span className="text-white text-sm">or</span>
-        <div className="flex-1 h-px bg-white/30"></div>
-      </div>
-
-      {/* Email/Password Form */}
-      <form onSubmit={handleEmailAuth} className="space-y-4">
-        {error && (
-          <div className={`p-4 rounded-lg text-sm font-medium ${
-            error.includes("Check your email") 
-              ? "bg-green-500/20 text-green-200 border border-green-500/50" 
-              : "bg-red-500/20 text-red-200 border border-red-500/50"
-          }`}>
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-white text-sm font-semibold mb-2">
-            Email Address
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            className="w-full px-4 py-3 bg-white text-gray-900 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            disabled={loading}
-            required
-          />
+      {error && (
+        <div className={`p-4 rounded-lg text-sm font-medium mt-4 ${
+          error.includes("Check your email") 
+            ? "bg-green-500/20 text-green-200 border border-green-500/50" 
+            : "bg-red-500/20 text-red-200 border border-red-500/50"
+        }`}>
+          {error}
         </div>
-
-        <div>
-          <label className="block text-white text-sm font-semibold mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-3 bg-white text-gray-900 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            disabled={loading}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
-        </button>
-      </form>
-
-      {/* Toggle Sign Up/Sign In */}
-      <div className="mt-6 text-center">
-        <p className="text-gray-300 text-sm">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError("");
-            }}
-            className="text-blue-300 hover:text-blue-100 font-semibold transition-colors"
-          >
-            {isSignUp ? "Sign In" : "Sign Up"}
-          </button>
-        </p>
-      </div>
+      )}
     </div>
   );
 }
