@@ -2,8 +2,11 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
-import { Listbox, Transition } from "@headlessui/react";
+import { Listbox, Transition, Dialog } from "@headlessui/react";
 import { Fragment, useEffect, useState } from "react";
+  // Modal state for folder deletion
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
 
 
 interface BookmarkListProps {
@@ -246,17 +249,19 @@ export default function BookmarkList({ userId, folders, fetchFolders }: Bookmark
 
   // Main return block
   // Delete folder and set folder_id to null for bookmarks in that folder
-  async function handleDeleteFolder(folderId: string) {
-    if (!window.confirm("Delete this folder? Bookmarks will not be deleted, just unassigned.")) return;
+  async function handleDeleteFolderConfirmed() {
+    if (!folderToDelete) return;
     try {
       // Set folder_id to null for bookmarks in this folder
-      await supabase.from("bookmarks").update({ folder_id: null }).eq("folder_id", folderId);
+      await supabase.from("bookmarks").update({ folder_id: null }).eq("folder_id", folderToDelete.id);
       // Delete the folder
-      const { error } = await supabase.from("folders").delete().eq("id", folderId);
+      const { error } = await supabase.from("folders").delete().eq("id", folderToDelete.id);
       if (error) throw error;
-      if (selectedFolder === folderId) setSelectedFolder(null);
+      if (selectedFolder === folderToDelete.id) setSelectedFolder(null);
       fetchFolders();
       fetchBookmarks();
+      setDeleteModalOpen(false);
+      setFolderToDelete(null);
     } catch (error) {
       alert("Failed to delete folder");
       console.error("Error deleting folder:", error);
@@ -298,10 +303,58 @@ export default function BookmarkList({ userId, folders, fetchFolders }: Bookmark
               <button
                 className="ml-1 px-2 py-1 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
                 title="Delete folder"
-                onClick={() => handleDeleteFolder(folder.id)}
+                onClick={() => {
+                  setFolderToDelete(folder);
+                  setDeleteModalOpen(true);
+                }}
               >
                 &#10005;
               </button>
+                  {/* Delete Folder Confirmation Modal */}
+                  <Transition appear show={deleteModalOpen} as={Fragment}>
+                    <Dialog as="div" className="relative z-50" onClose={() => setDeleteModalOpen(false)}>
+                      <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100"
+                        leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"
+                      >
+                        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                      </Transition.Child>
+                      <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                          <Transition.Child
+                            as={Fragment}
+                            enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
+                            leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
+                          >
+                            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl p-6 text-left align-middle shadow-xl border border-white/20">
+                              <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-white mb-2">
+                                Delete Folder
+                              </Dialog.Title>
+                              <div className="mt-2 text-white text-sm">
+                                Are you sure you want to delete the folder <span className="font-bold text-red-300">{folderToDelete?.name}</span>?<br />
+                                Bookmarks will not be deleted, just unassigned.
+                              </div>
+                              <div className="mt-6 flex gap-3 justify-end">
+                                <button
+                                  className="px-4 py-2 rounded-lg bg-gray-500/30 text-gray-200 hover:bg-gray-500/50 border border-gray-400/30 text-sm font-medium"
+                                  onClick={() => { setDeleteModalOpen(false); setFolderToDelete(null); }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  className="px-4 py-2 rounded-lg bg-red-600/80 text-white hover:bg-red-700/90 border border-red-600/60 text-sm font-semibold"
+                                  onClick={handleDeleteFolderConfirmed}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </Dialog.Panel>
+                          </Transition.Child>
+                        </div>
+                      </div>
+                    </Dialog>
+                  </Transition>
             </div>
           ))}
         </nav>
