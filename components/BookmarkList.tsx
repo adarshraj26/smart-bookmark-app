@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import type { Bookmark } from "@/lib/types";
+import type { Bookmark, Folder } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 
@@ -15,23 +15,67 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   // Folder feature removed
     // ...existing code...
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderError, setFolderError] = useState("");
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const [editFolder, setEditFolder] = useState<string | null>(null);
   const [editError, setEditError] = useState("");
   const [showFavorites, setShowFavorites] = useState(false);
 
-  // Folder feature removed
+  // Fetch folders for sidebar
+  useEffect(() => {
+    fetchFolders();
+  }, [userId]);
 
-  // Filter bookmarks by search and favorites, then sort pinned to top
+  async function fetchFolders() {
+    try {
+      const { data, error } = await supabase
+        .from("folders")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      setFolders(data || []);
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+    }
+  }
+
+  async function handleCreateFolder(e: React.FormEvent) {
+    e.preventDefault();
+    setFolderError("");
+    if (!newFolderName.trim()) {
+      setFolderError("Folder name required");
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("folders")
+        .insert({ user_id: userId, name: newFolderName.trim() })
+        .select();
+      if (error) throw error;
+      setFolders((prev) => [...prev, ...(data || [])]);
+      setNewFolderName("");
+    } catch (error) {
+      setFolderError("Failed to create folder");
+      console.error("Error creating folder:", error);
+    }
+  }
+
+  // Filter bookmarks by search, favorites, and folder, then sort pinned to top
   const filteredBookmarks = bookmarks
     .filter((bookmark) => {
       const matchesQuery = bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFavorite = showFavorites ? bookmark.favorite : true;
-      return matchesQuery && matchesFavorite;
+      const matchesFolder = selectedFolder ? bookmark.folder_id === selectedFolder : true;
+      return matchesQuery && matchesFavorite && matchesFolder;
     })
     .sort((a, b) => {
       // Pinned bookmarks always at top
@@ -150,6 +194,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
         .update({
           title: editTitle.trim(),
           url: editUrl.trim(),
+          folder_id: editFolder || null,
         })
         .eq("id", id);
 
@@ -159,7 +204,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       setBookmarks((prev) =>
         prev.map((b) =>
           b.id === id
-            ? { ...b, title: editTitle.trim(), url: editUrl.trim() }
+            ? { ...b, title: editTitle.trim(), url: editUrl.trim(), folder_id: editFolder || null }
             : b
         )
       );
@@ -167,6 +212,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       setEditingId(null);
       setEditTitle("");
       setEditUrl("");
+      setEditFolder(null);
     } catch (error) {
       console.error("Error updating bookmark:", error);
       setEditError("Failed to update bookmark");
@@ -177,6 +223,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
     setEditingId(bookmark.id);
     setEditTitle(bookmark.title);
     setEditUrl(bookmark.url);
+    setEditFolder(bookmark.folder_id || null);
     setEditError("");
   }
 
@@ -184,6 +231,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
     setEditingId(null);
     setEditTitle("");
     setEditUrl("");
+    setEditFolder(null);
     setEditError("");
   }
 
@@ -215,11 +263,70 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   }
 
   // Main return block
+  // Delete folder and set folder_id to null for bookmarks in that folder
+  async function handleDeleteFolder(folderId: string) {
+    if (!window.confirm("Delete this folder? Bookmarks will not be deleted, just unassigned.")) return;
+    try {
+      // Set folder_id to null for bookmarks in this folder
+      await supabase.from("bookmarks").update({ folder_id: null }).eq("folder_id", folderId);
+      // Delete the folder
+      const { error } = await supabase.from("folders").delete().eq("id", folderId);
+      if (error) throw error;
+      setFolders((prev) => prev.filter((f) => f.id !== folderId));
+      // If current folder is deleted, reset filter
+      if (selectedFolder === folderId) setSelectedFolder(null);
+      // Refetch bookmarks to update UI
+      fetchBookmarks();
+    } catch (error) {
+      alert("Failed to delete folder");
+      console.error("Error deleting folder:", error);
+    }
+  }
+
   return (
     <div className="flex gap-4">
-      {/* Folders Sidebar removed */}
+      {/* Folder Sidebar */}
+      <aside className="w-48 hidden sm:block">
+        <div className="mb-6">
+          <form onSubmit={handleCreateFolder} className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              placeholder="New folder"
+              className="flex-1 px-2 py-1 rounded-lg text-xs bg-white/10 border border-white/20 text-white placeholder-gray-400 outline-none"
+            />
+            <button type="submit" className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs font-semibold hover:bg-blue-600 transition">Create</button>
+          </form>
+          {folderError && <div className="text-xs text-red-400 mb-2">{folderError}</div>}
+        </div>
+        <nav className="space-y-1">
+          <button
+            className={`block w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition ${selectedFolder === null ? 'bg-blue-500/80 text-white' : 'text-blue-300 hover:bg-blue-500/20'}`}
+            onClick={() => setSelectedFolder(null)}
+          >
+            All Bookmarks
+          </button>
+          {folders.map(folder => (
+            <div key={folder.id} className="flex items-center group">
+              <button
+                className={`flex-1 block text-left px-3 py-2 rounded-lg text-sm transition ${selectedFolder === folder.id ? 'bg-blue-400/80 text-white font-semibold' : 'text-blue-200 hover:bg-blue-400/20'}`}
+                onClick={() => setSelectedFolder(folder.id)}
+              >
+                {folder.name}
+              </button>
+              <button
+                className="ml-1 px-2 py-1 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
+                title="Delete folder"
+                onClick={() => handleDeleteFolder(folder.id)}
+              >
+                &#10005;
+              </button>
+            </div>
+          ))}
+        </nav>
+      </aside>
       <div className="flex-1 space-y-4 sm:space-y-5">
-      {/* Removed import/export & favorites controls */}
       {/* Favorites Toggle */}
       <div className="flex items-center justify-end mb-2">
         <button
@@ -302,6 +409,21 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
                   placeholder="https://example.com"
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
+              </div>
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1 sm:mb-2">
+                  Folder
+                </label>
+                <select
+                  value={editFolder || ""}
+                  onChange={e => setEditFolder(e.target.value || null)}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                >
+                  <option value="">No Folder</option>
+                  {folders.map(folder => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
               </div>
               {editError && (
                 <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg text-xs sm:text-sm">

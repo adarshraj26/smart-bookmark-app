@@ -1,13 +1,21 @@
 
+
+export interface Folder {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Bookmark {
   id: string;
   user_id: string;
   url: string;
   title: string;
+  folder_id?: string | null;
   favorite?: boolean;
   pinned?: boolean;
   created_at: string;
-//
 }
 
 // Folder interface removed
