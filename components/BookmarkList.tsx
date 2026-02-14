@@ -34,6 +34,7 @@ export default function BookmarkList({
 
   async function fetchBookmarks() {
     setLoading(true);
+
     const { data } = await supabase
       .from("bookmarks")
       .select("*")
@@ -120,12 +121,13 @@ export default function BookmarkList({
   return (
     <>
       <div className="flex gap-8">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white/10 rounded-xl p-4 text-white h-fit">
-          <div className="font-bold text-lg mb-2">Folders</div>
+        {/* ================= SIDEBAR ================= */}
+        <aside className="w-64 bg-white/10 backdrop-blur-xl rounded-xl p-4 text-white h-fit border border-white/20">
+          <div className="font-bold text-lg mb-3">Folders</div>
 
+          {/* ✅ FIXED ADD BUTTON FORM */}
           <form
-            className="flex mb-4 bg-white/10 rounded-xl px-2 py-1 backdrop-blur-md border border-white/20"
+            className="flex mb-4 overflow-hidden rounded-xl bg-white/10 border border-white/20"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!newFolderName.trim()) return;
@@ -142,32 +144,35 @@ export default function BookmarkList({
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-l-xl bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition border-none"
+              className="flex-1 px-4 py-2 bg-transparent text-white placeholder-white/60 focus:outline-none"
               placeholder="New folder"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-r-xl font-semibold text-sm shadow transition border-none"
-              style={{ marginLeft: '-2px' }}
+              className="px-5 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition"
             >
               Add
             </button>
           </form>
 
+          {/* All bookmarks */}
           <button
             onClick={() => setSelectedFolder(null)}
-            className={`block w-full text-left px-3 py-2 rounded-lg mb-1 ${
-              !selectedFolder ? "bg-blue-600/80" : "hover:bg-white/20"
+            className={`block w-full text-left px-3 py-2 rounded-lg mb-1 transition ${
+              !selectedFolder
+                ? "bg-blue-600/80"
+                : "hover:bg-white/20"
             }`}
           >
             All Bookmarks
           </button>
 
+          {/* Folder list */}
           {folders.map((folder) => (
             <div key={folder.id} className="flex items-center mb-1 group">
               <button
                 onClick={() => setSelectedFolder(folder.id)}
-                className={`flex-1 text-left px-3 py-2 rounded-lg ${
+                className={`flex-1 text-left px-3 py-2 rounded-lg transition ${
                   selectedFolder === folder.id
                     ? "bg-blue-600/80"
                     : "hover:bg-white/20"
@@ -189,7 +194,7 @@ export default function BookmarkList({
           ))}
         </aside>
 
-        {/* Bookmarks */}
+        {/* ================= BOOKMARKS ================= */}
         <div className="flex-1 space-y-4">
           {bookmarks
             .filter(
@@ -204,58 +209,63 @@ export default function BookmarkList({
               >
                 {editingId === bookmark.id ? (
                   <form
-                    className="flex-1 flex flex-col gap-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/20"
+                    className="flex flex-col gap-3"
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleUpdate(bookmark);
                     }}
                   >
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-semibold text-white/80 mb-1">Title</label>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="px-4 py-2 rounded-xl bg-white/30 text-white placeholder-gray-300 outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
-                        placeholder="Bookmark title"
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-semibold text-white/80 mb-1">URL</label>
-                      <input
-                        type="url"
-                        value={editUrl}
-                        onChange={(e) => setEditUrl(e.target.value)}
-                        className="px-4 py-2 rounded-xl bg-white/30 text-white placeholder-gray-300 outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
-                        placeholder="https://example.com"
-                        required
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-semibold text-white/80 mb-1">Folder</label>
-                      <select
-                        value={editFolder || ""}
-                        onChange={(e) => setEditFolder(e.target.value || null)}
-                        className="px-4 py-2 rounded-xl bg-white/30 text-white outline-none border border-white/20 focus:ring-2 focus:ring-blue-400/40 transition"
-                      >
-                        <option value="">No Folder</option>
-                        {folders.map((folder) => (
-                          <option key={folder.id} value={folder.id}>{folder.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex gap-3 mt-2">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) =>
+                        setEditTitle(e.target.value)
+                      }
+                      className="px-3 py-2 rounded bg-white/20"
+                      required
+                    />
+
+                    <input
+                      type="url"
+                      value={editUrl}
+                      onChange={(e) =>
+                        setEditUrl(e.target.value)
+                      }
+                      className="px-3 py-2 rounded bg-white/20"
+                      required
+                    />
+
+                    <select
+                      value={editFolder || ""}
+                      onChange={(e) =>
+                        setEditFolder(
+                          e.target.value || null
+                        )
+                      }
+                      className="px-3 py-2 rounded bg-white/20"
+                    >
+                      <option value="">No Folder</option>
+                      {folders.map((folder) => (
+                        <option
+                          key={folder.id}
+                          value={folder.id}
+                        >
+                          {folder.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex gap-2">
                       <button
                         type="submit"
-                        className="px-5 py-2 bg-green-500/90 hover:bg-green-600 text-white rounded-xl font-semibold text-sm shadow transition"
+                        className="px-3 py-1 bg-green-600 rounded-lg text-xs"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="px-5 py-2 bg-gray-600/80 hover:bg-gray-700 text-white rounded-xl font-semibold text-sm shadow transition"
+                        className="px-3 py-1 bg-gray-600 rounded-lg text-xs"
                       >
                         Cancel
                       </button>
@@ -309,7 +319,7 @@ export default function BookmarkList({
         </div>
       </div>
 
-      {/* Delete Modal */}
+      {/* ================= DELETE MODAL ================= */}
       {deleteModalOpen && itemToDelete && (
         <Dialog
           open={deleteModalOpen}
