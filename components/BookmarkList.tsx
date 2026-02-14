@@ -2,8 +2,8 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
-import { Listbox, Transition, Dialog } from "@headlessui/react";
-import { Fragment, useEffect, useState } from "react";
+import { Dialog } from "@headlessui/react";
+import { useEffect, useState } from "react";
 
 interface BookmarkListProps {
   userId: string;
@@ -16,25 +16,13 @@ export default function BookmarkList({
   folders,
   fetchFolders,
 }: BookmarkListProps) {
-
-  // ================= STATE =================
-
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [folderError, setFolderError] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editUrl, setEditUrl] = useState("");
-  const [editFolder, setEditFolder] = useState<string | null>(null);
-  const [editError, setEditError] = useState("");
-  const [showFavorites, setShowFavorites] = useState(false);
 
-  // ✅ FIXED — moved inside component
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
+  const [itemToDelete, setItemToDelete] =
+    useState<Bookmark | Folder | null>(null);
 
   // ================= FETCH =================
 
@@ -50,7 +38,7 @@ export default function BookmarkList({
       if (error) throw error;
       setBookmarks(data || []);
     } catch (error) {
-      console.error("Error fetching bookmarks:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -58,92 +46,54 @@ export default function BookmarkList({
 
   useEffect(() => {
     fetchBookmarks();
-
-    const channel = supabase
-      .channel(`bookmarks:user_id=eq.${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "bookmarks",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setBookmarks((prev) => [payload.new as Bookmark, ...prev]);
-          } else if (payload.eventType === "DELETE") {
-            setBookmarks((prev) =>
-              prev.filter((b) => b.id !== (payload.old as Bookmark).id)
-            );
-          } else if (payload.eventType === "UPDATE") {
-            setBookmarks((prev) =>
-              prev.map((b) =>
-                b.id === (payload.new as Bookmark).id
-                  ? (payload.new as Bookmark)
-                  : b
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
   }, [userId]);
 
   // ================= FILTER =================
 
-  const filteredBookmarks = bookmarks
-    .filter((bookmark) => {
-      const matchesQuery =
-        bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredBookmarks = bookmarks.filter((bookmark) =>
+    selectedFolder ? bookmark.folder_id === selectedFolder : true
+  );
 
-      const matchesFavorite = showFavorites ? bookmark.favorite : true;
-      const matchesFolder = selectedFolder
-        ? bookmark.folder_id === selectedFolder
-        : true;
+  // ================= DELETE HANDLER =================
 
-      return matchesQuery && matchesFavorite && matchesFolder;
-    })
-    .sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return 0;
-    });
-
-  // ================= FOLDER DELETE =================
-
-  async function handleDeleteFolderConfirmed() {
-    if (!folderToDelete) return;
+  async function handleDeleteConfirmed() {
+    if (!itemToDelete) return;
 
     try {
-      await supabase
-        .from("bookmarks")
-        .update({ folder_id: null })
-        .eq("folder_id", folderToDelete.id);
+      if ("url" in itemToDelete) {
+        // Bookmark delete
+        await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("id", itemToDelete.id);
 
-      const { error } = await supabase
-        .from("folders")
-        .delete()
-        .eq("id", folderToDelete.id);
+        setBookmarks((prev) =>
+          prev.filter((b) => b.id !== itemToDelete.id)
+        );
+      } else {
+        // Folder delete
+        await supabase
+          .from("bookmarks")
+          .update({ folder_id: null })
+          .eq("folder_id", itemToDelete.id);
 
-      if (error) throw error;
+        await supabase
+          .from("folders")
+          .delete()
+          .eq("id", itemToDelete.id);
 
-      if (selectedFolder === folderToDelete.id) {
-        setSelectedFolder(null);
+        if (selectedFolder === itemToDelete.id) {
+          setSelectedFolder(null);
+        }
+
+        fetchFolders();
+        fetchBookmarks();
       }
 
-      fetchFolders();
-      fetchBookmarks();
       setDeleteModalOpen(false);
-      setFolderToDelete(null);
+      setItemToDelete(null);
     } catch (error) {
-      alert("Failed to delete folder");
-      console.error(error);
+      alert("Failed to delete");
     }
   }
 
@@ -175,7 +125,7 @@ export default function BookmarkList({
 
             <button
               onClick={() => {
-                setFolderToDelete(folder);
+                setItemToDelete(folder);
                 setDeleteModalOpen(true);
               }}
               className="ml-1 text-red-400 opacity-0 group-hover:opacity-100"
@@ -204,124 +154,64 @@ export default function BookmarkList({
                 {bookmark.url}
               </a>
             </div>
-            <div className="flex gap-2 ml-4">
+
+            <button
+              onClick={() => {
+                setItemToDelete(bookmark);
+                setDeleteModalOpen(true);
+              }}
+              className="px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* SINGLE DELETE MODAL */}
+      {deleteModalOpen && itemToDelete && (
+        <Dialog
+          open={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+        >
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+
+          <div className="relative bg-slate-900 p-6 rounded-xl text-white max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">
+              {"url" in itemToDelete
+                ? "Delete Bookmark"
+                : "Delete Folder"}
+            </h3>
+
+            <p className="mb-6">
+              Are you sure you want to delete{" "}
+              <span className="text-red-400 font-bold">
+                {"url" in itemToDelete
+                  ? itemToDelete.title
+                  : itemToDelete.name}
+              </span>
+              ?
+            </p>
+
+            <div className="flex justify-end gap-3">
               <button
-                onClick={() => {
-                  setEditingId(bookmark.id);
-                  setEditTitle(bookmark.title);
-                  setEditUrl(bookmark.url);
-                  setEditFolder(bookmark.folder_id || null);
-                }}
-                className="px-3 py-1 bg-blue-600/80 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 bg-gray-600 rounded-lg"
               >
-                Edit
+                Cancel
               </button>
+
               <button
-                onClick={() => {
-                  setFolderToDelete(bookmark); // reuse folderToDelete for bookmark modal
-                  setDeleteModalOpen(true);
-                }}
-                className="px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+                onClick={handleDeleteConfirmed}
+                className="px-4 py-2 bg-red-600 rounded-lg"
               >
                 Delete
               </button>
             </div>
           </div>
-      {/* Bookmark/Folder Delete Modal */}
-      <Transition appear show={!!(deleteModalOpen && folderToDelete)} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50"
-          onClose={() => setDeleteModalOpen(false)}
-        >
-          <div className="fixed inset-0 bg-black/40" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
-              <Dialog.Title className="text-lg font-bold mb-4">
-                {folderToDelete?.url ? 'Delete Bookmark' : 'Delete Folder'}
-              </Dialog.Title>
-              <p className="mb-4">
-                Are you sure you want to delete
-                <span className="text-red-400 font-bold"> {folderToDelete?.title || folderToDelete?.name} </span>?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-gray-600 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      if (folderToDelete?.url) {
-                        // Bookmark delete
-                        await supabase.from('bookmarks').delete().eq('id', folderToDelete.id);
-                        setBookmarks((prev) => prev.filter((b) => b.id !== folderToDelete.id));
-                      } else {
-                        // Folder delete
-                        await supabase.from('bookmarks').update({ folder_id: null }).eq('folder_id', folderToDelete.id);
-                        await supabase.from('folders').delete().eq('id', folderToDelete.id);
-                        if (selectedFolder === folderToDelete.id) setSelectedFolder(null);
-                        fetchFolders();
-                        fetchBookmarks();
-                      }
-                      setDeleteModalOpen(false);
-                      setFolderToDelete(null);
-                    } catch (error) {
-                      alert('Failed to delete');
-                    }
-                  }}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
-                >
-                  Delete
-                </button>
-              </div>
-            </Dialog.Panel>
-          </div>
         </Dialog>
-      </Transition>
-        ))}
-      </div>
-
-      {/* Delete Folder Modal */}
-      <Transition appear show={deleteModalOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50"
-          onClose={() => setDeleteModalOpen(false)}
-        >
-          <div className="fixed inset-0 bg-black/40" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
-              <Dialog.Title className="text-lg font-bold mb-4">
-                Delete Folder
-              </Dialog.Title>
-              <p className="mb-4">
-                Are you sure you want to delete{" "}
-                <span className="text-red-400 font-bold">
-                  {folderToDelete?.name}
-                </span>
-                ?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 bg-gray-600 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteFolderConfirmed}
-                  className="px-4 py-2 bg-red-600 rounded-lg"
-                >
-                  Delete
-                </button>
-              </div>
-            </Dialog.Panel>
-          </div>
-        </Dialog>
-      </Transition>
+      )}
     </div>
   );
 }
