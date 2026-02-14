@@ -33,8 +33,6 @@ export default function BookmarkList({
   const [itemToDelete, setItemToDelete] =
     useState<Bookmark | Folder | null>(null);
 
-  // ================= FETCH =================
-
   async function fetchBookmarks() {
     const { data } = await supabase
       .from("bookmarks")
@@ -49,8 +47,6 @@ export default function BookmarkList({
   useEffect(() => {
     fetchBookmarks();
   }, [userId]);
-
-  // ================= REALTIME =================
 
   useEffect(() => {
     const channel = supabase
@@ -97,8 +93,6 @@ export default function BookmarkList({
     };
   }, [userId]);
 
-  // ================= UPDATE =================
-
   async function handleUpdate(bookmark: Bookmark) {
     const { data } = await supabase
       .from("bookmarks")
@@ -120,8 +114,6 @@ export default function BookmarkList({
     setEditingId(null);
   }
 
-  // ================= DELETE =================
-
   async function handleDeleteConfirmed() {
     if (!itemToDelete) return;
 
@@ -131,7 +123,6 @@ export default function BookmarkList({
         .delete()
         .eq("id", itemToDelete.id);
 
-      // Immediate UI update
       setBookmarks((prev) =>
         prev.filter((b) => b.id !== itemToDelete.id)
       );
@@ -156,25 +147,18 @@ export default function BookmarkList({
 
   if (loading) return <div className="text-white">Loading...</div>;
 
-  const filteredBookmarks = bookmarks
-    .filter((b) => {
-      const matchesSearch =
-        b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.url.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredBookmarks = bookmarks.filter((b) => {
+    const matchesSearch =
+      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.url.toLowerCase().includes(searchQuery.toLowerCase());
 
-      if (showFavorites) return b.favorite && matchesSearch;
-      if (!selectedFolder) return matchesSearch;
-      return b.folder_id === selectedFolder && matchesSearch;
-    })
-    .sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return 0;
-    });
+    if (showFavorites) return b.favorite && matchesSearch;
+    if (!selectedFolder) return matchesSearch;
+    return b.folder_id === selectedFolder && matchesSearch;
+  });
 
   return (
     <>
-      {/* Mobile Sidebar Toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="lg:hidden mb-3 px-4 py-2 bg-purple-600 rounded-lg text-white"
@@ -186,15 +170,14 @@ export default function BookmarkList({
 
         {/* SIDEBAR */}
         <aside
-          className={`w-full lg:w-64 bg-white/10 rounded-xl p-4 text-white transition-all duration-300 ${
+          className={`w-full lg:w-64 box-border overflow-hidden bg-white/10 rounded-xl p-4 text-white transition-all duration-300 ${
             sidebarOpen ? "block" : "hidden lg:block"
           }`}
         >
           <div className="font-bold text-lg mb-3">Folders</div>
 
-          {/* Create Folder */}
           <form
-            className="flex items-center gap-2 mb-4"
+            className="flex w-full items-center gap-2 mb-4"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!newFolderName.trim()) return;
@@ -211,9 +194,12 @@ export default function BookmarkList({
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="New folder"
-              className="flex-1 px-3 py-2 rounded-lg bg-white/20"
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/20"
             />
-            <button className="px-3 py-2 bg-green-500 rounded-lg">
+            <button
+              type="submit"
+              className="shrink-0 px-3 py-2 bg-green-500 rounded-lg"
+            >
               Add
             </button>
           </form>
@@ -265,7 +251,6 @@ export default function BookmarkList({
         {/* BOOKMARKS */}
         <div className="flex-1 space-y-4">
 
-          {/* Search */}
           <input
             placeholder="Search bookmarks..."
             value={searchQuery}
@@ -292,7 +277,6 @@ export default function BookmarkList({
 
               <div className="flex gap-2">
 
-                {/* Pin */}
                 <button
                   onClick={async () => {
                     const { data } = await supabase
@@ -319,7 +303,6 @@ export default function BookmarkList({
                   📌
                 </button>
 
-                {/* Favorite */}
                 <button
                   onClick={async () => {
                     const { data } = await supabase
@@ -374,7 +357,6 @@ export default function BookmarkList({
         </div>
       </div>
 
-      {/* DELETE MODAL */}
       {deleteModalOpen && itemToDelete && (
         <Dialog
           open={deleteModalOpen}
