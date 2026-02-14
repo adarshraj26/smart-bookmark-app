@@ -49,6 +49,40 @@ export default function BookmarkList({
     fetchBookmarks();
   }, [userId]);
 
+  // ================= PIN =================
+
+  async function togglePin(bookmark: Bookmark) {
+    await supabase
+      .from("bookmarks")
+      .update({ pinned: !bookmark.pinned })
+      .eq("id", bookmark.id);
+
+    setBookmarks((prev) =>
+      prev.map((b) =>
+        b.id === bookmark.id
+          ? { ...b, pinned: !bookmark.pinned }
+          : b
+      )
+    );
+  }
+
+  // ================= FAVORITE =================
+
+  async function toggleFavorite(bookmark: Bookmark) {
+    await supabase
+      .from("bookmarks")
+      .update({ favorite: !bookmark.favorite })
+      .eq("id", bookmark.id);
+
+    setBookmarks((prev) =>
+      prev.map((b) =>
+        b.id === bookmark.id
+          ? { ...b, favorite: !bookmark.favorite }
+          : b
+      )
+    );
+  }
+
   // ================= UPDATE =================
 
   async function handleUpdate(bookmark: Bookmark) {
@@ -125,7 +159,6 @@ export default function BookmarkList({
         <aside className="w-64 bg-white/10 rounded-xl p-4 text-white h-fit backdrop-blur-xl border border-white/20">
           <div className="font-bold text-lg mb-3">Folders</div>
 
-          {/* FIXED Folder Form */}
           <form
             className="flex items-center gap-2 mb-4"
             onSubmit={async (e) => {
@@ -145,12 +178,12 @@ export default function BookmarkList({
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="New folder"
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/20 text-white"
             />
 
             <button
               type="submit"
-              className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg whitespace-nowrap transition"
+              className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg"
             >
               Add
             </button>
@@ -166,28 +199,17 @@ export default function BookmarkList({
           </button>
 
           {folders.map((folder) => (
-            <div key={folder.id} className="flex items-center mb-1 group">
-              <button
-                onClick={() => setSelectedFolder(folder.id)}
-                className={`flex-1 text-left px-3 py-2 rounded-lg ${
-                  selectedFolder === folder.id
-                    ? "bg-blue-600/80"
-                    : "hover:bg-white/20"
-                }`}
-              >
-                {folder.name}
-              </button>
-
-              <button
-                onClick={() => {
-                  setItemToDelete(folder);
-                  setDeleteModalOpen(true);
-                }}
-                className="ml-2 text-red-400 opacity-0 group-hover:opacity-100"
-              >
-                ×
-              </button>
-            </div>
+            <button
+              key={folder.id}
+              onClick={() => setSelectedFolder(folder.id)}
+              className={`block w-full text-left px-3 py-2 rounded-lg mb-1 ${
+                selectedFolder === folder.id
+                  ? "bg-blue-600/80"
+                  : "hover:bg-white/20"
+              }`}
+            >
+              {folder.name}
+            </button>
           ))}
         </aside>
 
@@ -198,112 +220,79 @@ export default function BookmarkList({
               (b) =>
                 !selectedFolder || b.folder_id === selectedFolder
             )
+            .sort((a, b) => {
+              if (a.pinned && !b.pinned) return -1;
+              if (!a.pinned && b.pinned) return 1;
+              return 0;
+            })
             .map((bookmark) => (
               <div
                 key={bookmark.id}
-                className="bg-white/10 p-4 rounded-xl text-white backdrop-blur-md border border-white/20"
+                className="bg-white/10 p-4 rounded-xl text-white border border-white/20"
               >
-                {editingId === bookmark.id ? (
-                  <form
-                    className="flex flex-col gap-3"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleUpdate(bookmark);
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-white/20"
-                      required
-                    />
-
-                    <input
-                      type="url"
-                      value={editUrl}
-                      onChange={(e) => setEditUrl(e.target.value)}
-                      className="px-3 py-2 rounded-lg bg-white/20"
-                      required
-                    />
-
-                    <select
-                      value={editFolder || ""}
-                      onChange={(e) =>
-                        setEditFolder(e.target.value || null)
-                      }
-                      className="px-3 py-2 rounded-lg bg-white/20"
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">
+                      {bookmark.title}
+                    </h3>
+                    <a
+                      href={bookmark.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400"
                     >
-                      <option value="">No Folder</option>
-                      {folders.map((folder) => (
-                        <option
-                          key={folder.id}
-                          value={folder.id}
-                        >
-                          {folder.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="px-3 py-2 bg-green-600 rounded-lg text-sm"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                        className="px-3 py-2 bg-gray-600 rounded-lg text-sm"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold">
-                        {bookmark.title}
-                      </h3>
-                      <a
-                        href={bookmark.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400"
-                      >
-                        {bookmark.url}
-                      </a>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingId(bookmark.id);
-                          setEditTitle(bookmark.title);
-                          setEditUrl(bookmark.url);
-                          setEditFolder(
-                            bookmark.folder_id || null
-                          );
-                        }}
-                        className="px-3 py-1 bg-blue-600 rounded-lg text-xs"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setItemToDelete(bookmark);
-                          setDeleteModalOpen(true);
-                        }}
-                        className="px-3 py-1 bg-red-600 rounded-lg text-xs"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                      {bookmark.url}
+                    </a>
                   </div>
-                )}
+
+                  <div className="flex gap-3 items-center">
+                    {/* Pin */}
+                    <button
+                      onClick={() => togglePin(bookmark)}
+                      title="Pin"
+                      className={`text-yellow-400 ${
+                        bookmark.pinned ? "" : "opacity-50"
+                      }`}
+                    >
+                      📌
+                    </button>
+
+                    {/* Favorite */}
+                    <button
+                      onClick={() => toggleFavorite(bookmark)}
+                      title="Favorite"
+                      className={`text-pink-400 ${
+                        bookmark.favorite ? "" : "opacity-50"
+                      }`}
+                    >
+                      ⭐
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setEditingId(bookmark.id);
+                        setEditTitle(bookmark.title);
+                        setEditUrl(bookmark.url);
+                        setEditFolder(
+                          bookmark.folder_id || null
+                        );
+                      }}
+                      className="px-3 py-1 bg-blue-600 rounded-lg text-xs"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setItemToDelete(bookmark);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="px-3 py-1 bg-red-600 rounded-lg text-xs"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
         </div>
@@ -317,23 +306,10 @@ export default function BookmarkList({
           className="fixed inset-0 z-50 flex items-center justify-center"
         >
           <div className="fixed inset-0 bg-black/40" />
-
           <div className="relative bg-slate-900 p-6 rounded-xl text-white">
             <h3 className="text-lg font-bold mb-4">
-              {isBookmark(itemToDelete)
-                ? "Delete Bookmark"
-                : "Delete Folder"}
+              Delete Bookmark?
             </h3>
-
-            <p className="mb-6">
-              Are you sure you want to delete{" "}
-              <span className="text-red-400 font-bold">
-                {isBookmark(itemToDelete)
-                  ? itemToDelete.title
-                  : itemToDelete.name}
-              </span>
-              ?
-            </p>
 
             <div className="flex gap-3 justify-end">
               <button
