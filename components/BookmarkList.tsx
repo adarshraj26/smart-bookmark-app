@@ -202,6 +202,34 @@ export default function BookmarkList({
             >
               {bookmark.url}
             </a>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => {
+                  setEditingId(bookmark.id);
+                  setEditTitle(bookmark.title);
+                  setEditUrl(bookmark.url);
+                  setEditFolder(bookmark.folder_id || null);
+                }}
+                className="px-3 py-1 bg-blue-600/80 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+              >
+                Edit
+              </button>
+              <button
+                onClick={async () => {
+                  if (window.confirm('Delete this bookmark?')) {
+                    try {
+                      await supabase.from('bookmarks').delete().eq('id', bookmark.id);
+                      setBookmarks((prev) => prev.filter((b) => b.id !== bookmark.id));
+                    } catch (error) {
+                      alert('Failed to delete bookmark');
+                    }
+                  }
+                }}
+                className="px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
