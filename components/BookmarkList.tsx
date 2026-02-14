@@ -113,7 +113,9 @@ export default function BookmarkList({
     setItemToDelete(null);
   }
 
-  if (loading) return <div className="text-white">Loading...</div>;
+  if (loading) {
+    return <div className="text-white">Loading...</div>;
+  }
 
   return (
     <>
@@ -172,6 +174,7 @@ export default function BookmarkList({
               >
                 {folder.name}
               </button>
+
               <button
                 onClick={() => {
                   setItemToDelete(folder);
@@ -189,7 +192,9 @@ export default function BookmarkList({
         <div className="flex-1 space-y-4">
           {bookmarks
             .filter(
-              (b) => !selectedFolder || b.folder_id === selectedFolder
+              (b) =>
+                !selectedFolder ||
+                b.folder_id === selectedFolder
             )
             .map((bookmark) => (
               <div
@@ -316,6 +321,7 @@ export default function BookmarkList({
           className="fixed inset-0 z-50 flex items-center justify-center"
         >
           <div className="fixed inset-0 bg-black/40" />
+
           <div className="relative bg-slate-900 p-6 rounded-xl text-white">
             <h3 className="text-lg font-bold mb-4">
               {isBookmark(itemToDelete)
