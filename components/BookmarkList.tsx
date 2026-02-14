@@ -169,55 +169,6 @@
       {/* Modal remains unchanged */}
       {/* ...existing code for Dialog/modal... */}
     </div>
-                    value={editTitle}
-                    onChange={(e) =>
-                      setEditTitle(e.target.value)
-                    }
-                    className="px-2 py-1 rounded bg-white/20 text-white"
-                    required
-                  />
-
-                  <input
-                    type="url"
-                    value={editUrl}
-                    onChange={(e) =>
-                      setEditUrl(e.target.value)
-                    }
-                    className="px-2 py-1 rounded bg-white/20 text-white"
-                    required
-                  />
-
-                  <select
-                    value={editFolder || ""}
-                    onChange={(e) =>
-                      setEditFolder(
-                        e.target.value || null
-                      )
-                    }
-                    className="px-2 py-1 rounded bg-white/20 text-white"
-                  >
-                    <option value="">
-                      No Folder
-                    </option>
-                    {folders.map((folder) => (
-                      <option
-                        key={folder.id}
-                        value={folder.id}
-                      >
-                        {folder.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="px-3 py-1 bg-green-600 rounded-lg text-xs"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
                       onClick={() =>
                         setEditingId(null)
                       }
