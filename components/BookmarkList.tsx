@@ -227,50 +227,60 @@ export default function BookmarkList({
               </button>
             </div>
           </div>
-              {/* Bookmark Delete Modal */}
-              <Transition appear show={!!(deleteModalOpen && folderToDelete && folderToDelete.url)} as={Fragment}>
-                <Dialog
-                  as="div"
-                  className="relative z-50"
-                  onClose={() => setDeleteModalOpen(false)}
+      {/* Bookmark/Folder Delete Modal */}
+      <Transition appear show={!!(deleteModalOpen && folderToDelete)} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-50"
+          onClose={() => setDeleteModalOpen(false)}
+        >
+          <div className="fixed inset-0 bg-black/40" />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
+              <Dialog.Title className="text-lg font-bold mb-4">
+                {folderToDelete?.url ? 'Delete Bookmark' : 'Delete Folder'}
+              </Dialog.Title>
+              <p className="mb-4">
+                Are you sure you want to delete
+                <span className="text-red-400 font-bold"> {folderToDelete?.title || folderToDelete?.name} </span>?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="px-4 py-2 bg-gray-600 rounded-lg"
                 >
-                  <div className="fixed inset-0 bg-black/40" />
-                  <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <Dialog.Panel className="bg-slate-900 p-6 rounded-xl text-white">
-                      <Dialog.Title className="text-lg font-bold mb-4">
-                        Delete Bookmark
-                      </Dialog.Title>
-                      <p className="mb-4">
-                        Are you sure you want to delete
-                        <span className="text-red-400 font-bold"> {folderToDelete?.title} </span>?
-                      </p>
-                      <div className="flex gap-3 justify-end">
-                        <button
-                          onClick={() => setDeleteModalOpen(false)}
-                          className="px-4 py-2 bg-gray-600 rounded-lg"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              await supabase.from('bookmarks').delete().eq('id', folderToDelete.id);
-                              setBookmarks((prev) => prev.filter((b) => b.id !== folderToDelete.id));
-                              setDeleteModalOpen(false);
-                              setFolderToDelete(null);
-                            } catch (error) {
-                              alert('Failed to delete bookmark');
-                            }
-                          }}
-                          className="px-4 py-2 bg-red-600 rounded-lg"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </Dialog.Panel>
-                  </div>
-                </Dialog>
-              </Transition>
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      if (folderToDelete?.url) {
+                        // Bookmark delete
+                        await supabase.from('bookmarks').delete().eq('id', folderToDelete.id);
+                        setBookmarks((prev) => prev.filter((b) => b.id !== folderToDelete.id));
+                      } else {
+                        // Folder delete
+                        await supabase.from('bookmarks').update({ folder_id: null }).eq('folder_id', folderToDelete.id);
+                        await supabase.from('folders').delete().eq('id', folderToDelete.id);
+                        if (selectedFolder === folderToDelete.id) setSelectedFolder(null);
+                        fetchFolders();
+                        fetchBookmarks();
+                      }
+                      setDeleteModalOpen(false);
+                      setFolderToDelete(null);
+                    } catch (error) {
+                      alert('Failed to delete');
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 rounded-lg"
+                >
+                  Delete
+                </button>
+              </div>
+            </Dialog.Panel>
+          </div>
+        </Dialog>
+      </Transition>
         ))}
       </div>
 
