@@ -109,17 +109,22 @@ export default function AddBookmarkForm({
           <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1.5 sm:mb-2">
             Folder
           </label>
-          <select
-            value={selectedFolder || ""}
-            onChange={e => setSelectedFolder(e.target.value || null)}
-            className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg sm:rounded-lg text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            disabled={loading}
-          >
-            <option value="">No Folder</option>
-            {folders.map(folder => (
-              <option key={folder.id} value={folder.id}>{folder.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedFolder || ""}
+              onChange={e => setSelectedFolder(e.target.value || null)}
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 bg-clip-padding backdrop-blur-xl border border-white/20 rounded-lg sm:rounded-lg text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-lg hover:bg-white/20"
+              disabled={loading}
+              style={{ WebkitBackdropFilter: 'blur(16px)' }}
+            >
+              <option value="">No Folder</option>
+              {folders.map(folder => (
+                <option key={folder.id} value={folder.id}>{folder.name}</option>
+              ))}
+            </select>
+            {/* Optional: Add a subtle overlay for extra glass effect */}
+            {/* <div className="pointer-events-none absolute inset-0 rounded-lg bg-white/10 backdrop-blur-xl" /> */}
+          </div>
         </div>
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1.5 sm:mb-2">
