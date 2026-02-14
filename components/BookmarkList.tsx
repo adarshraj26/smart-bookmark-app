@@ -2,8 +2,8 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
-import { useEffect, useState, Fragment } from "react";
 import { Listbox, Transition } from "@headlessui/react";
+import { Fragment, useEffect, useState } from "react";
 
 
 interface BookmarkListProps {

@@ -6,7 +6,7 @@ import BookmarkList from "@/components/BookmarkList";
 import LoadingScreen from "@/components/LoadingScreen";
 import UserMenu from "@/components/UserMenu";
 import { supabase } from "@/lib/supabase";
-import type { User, Folder } from "@/lib/types";
+import type { Folder, User } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 // This page requires runtime rendering (client-side auth)
