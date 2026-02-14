@@ -4,7 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Smart Bookmark App",
   description: "Manage your bookmarks with real-time synchronization",
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=5.0",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+  maximumScale: 5.0,
 };
 
 export default function RootLayout({
