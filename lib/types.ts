@@ -4,9 +4,10 @@ export interface Bookmark {
   user_id: string;
   url: string;
   title: string;
-  folder_id?: string | null;
   favorite?: boolean;
+  pinned?: boolean;
   created_at: string;
+}
 }
 
 // Folder interface removed

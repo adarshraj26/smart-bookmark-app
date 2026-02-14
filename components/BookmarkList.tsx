@@ -25,13 +25,30 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
 
   // Folder feature removed
 
-  // Filter bookmarks by folder and search query
-  const filteredBookmarks = bookmarks.filter((bookmark) => {
-    const matchesQuery = bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFavorite = showFavorites ? bookmark.favorite : true;
-    return matchesQuery && matchesFavorite;
-  });
+  // Filter bookmarks by search and favorites, then sort pinned to top
+  const filteredBookmarks = bookmarks
+    .filter((bookmark) => {
+      const matchesQuery = bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        bookmark.url.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFavorite = showFavorites ? bookmark.favorite : true;
+      return matchesQuery && matchesFavorite;
+    })
+    .sort((a, b) => {
+      // Pinned bookmarks always at top
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0;
+    });
+    // Pin/unpin logic
+    async function togglePin(bookmark: Bookmark) {
+      const { error } = await supabase
+        .from("bookmarks")
+        .update({ pinned: !bookmark.pinned })
+        .eq("id", bookmark.id);
+      if (!error) {
+        setBookmarks((prev) => prev.map((b) => b.id === bookmark.id ? { ...b, pinned: !bookmark.pinned } : b));
+      }
+    }
   // Toggle favorite status
   async function toggleFavorite(bookmark: Bookmark) {
     const { error } = await supabase
@@ -333,6 +350,16 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto items-center">
+                  {/* Pin toggle */}
+                  <button
+                    onClick={() => togglePin(bookmark)}
+                    title={bookmark.pinned ? "Unpin" : "Pin"}
+                    className={`p-2 rounded-full border transition ${bookmark.pinned ? 'bg-blue-400/90 text-blue-900 border-blue-400' : 'bg-white/10 text-blue-300 border-blue-400/40 hover:bg-blue-400/20'}`}
+                  >
+                    <svg className="w-4 h-4" fill={bookmark.pinned ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657l-1.414-1.414A8 8 0 014 4V2a1 1 0 112 0v2a6 6 0 006 6h2a1 1 0 110 2h-2a8 8 0 01-8-8V2a1 1 0 112 0v2a10 10 0 0010 10l1.414 1.414a1 1 0 010 1.414l-2.828 2.828a1 1 0 01-1.414 0l-2.828-2.828a1 1 0 010-1.414z" />
+                    </svg>
+                  </button>
                   {/* Favorite/Star toggle */}
                   <button
                     onClick={() => toggleFavorite(bookmark)}
