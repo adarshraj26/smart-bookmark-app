@@ -125,7 +125,7 @@ export default function BookmarkList({
           <div className="font-bold text-lg mb-2">Folders</div>
 
           <form
-            className="flex items-center gap-2 mb-4 bg-white/10 rounded-lg px-2 py-1 backdrop-blur-md"
+            className="flex mb-4 bg-white/10 rounded-xl px-2 py-1 backdrop-blur-md border border-white/20"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!newFolderName.trim()) return;
@@ -142,12 +142,13 @@ export default function BookmarkList({
               type="text"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition"
+              className="flex-1 px-3 py-2 rounded-l-xl bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition border-none"
               placeholder="New folder"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm shadow transition"
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-r-xl font-semibold text-sm shadow transition border-none"
+              style={{ marginLeft: '-2px' }}
             >
               Add
             </button>
