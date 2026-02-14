@@ -18,8 +18,8 @@
 2. Copy the following to your `.env.local` file:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://arhfdlwuvqvqgywfavyk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable__NU4YBHhnzPe7hF5lYca8g_CtGz0LWA
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 
 **Where to find these:**
