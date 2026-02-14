@@ -2,7 +2,8 @@
 
 import { supabase } from "@/lib/supabase";
 import type { Bookmark, Folder } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
+import { Listbox, Transition } from "@headlessui/react";
 
 
 interface BookmarkListProps {
@@ -393,16 +394,33 @@ export default function BookmarkList({ userId, folders, fetchFolders }: Bookmark
                 <label className="block text-xs sm:text-sm font-semibold text-gray-100 mb-1 sm:mb-2">
                   Folder
                 </label>
-                <select
-                  value={editFolder || ""}
-                  onChange={e => setEditFolder(e.target.value || null)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                >
-                  <option value="">No Folder</option>
-                  {folders.map(folder => (
-                    <option key={folder.id} value={folder.id}>{folder.name}</option>
-                  ))}
-                </select>
+                <Listbox value={editFolder || ""} onChange={val => setEditFolder(val || null)}>
+                  <div className="relative">
+                    <Listbox.Button className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-lg text-sm sm:text-base text-white text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition backdrop-blur-xl shadow-lg">
+                      {(() => {
+                        if (!editFolder) return <span className="text-gray-300">No Folder</span>;
+                        const folder = folders.find(f => f.id === editFolder);
+                        return folder ? folder.name : <span className="text-gray-300">No Folder</span>;
+                      })()}
+                    </Listbox.Button>
+                    <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                      <Listbox.Options className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl focus:outline-none">
+                        <Listbox.Option value="" className={({ active }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-500/80 text-white' : 'text-gray-100'}`}>
+                          No Folder
+                        </Listbox.Option>
+                        {folders.map(folder => (
+                          <Listbox.Option
+                            key={folder.id}
+                            value={folder.id}
+                            className={({ active }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-400/80 text-white' : 'text-gray-100'}`}
+                          >
+                            {folder.name}
+                          </Listbox.Option>
+                        ))}
+                      </Listbox.Options>
+                    </Transition>
+                  </div>
+                </Listbox>
               </div>
               {editError && (
                 <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg text-xs sm:text-sm">
