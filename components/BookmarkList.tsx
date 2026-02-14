@@ -18,6 +18,8 @@ export default function BookmarkList({
 }: BookmarkListProps) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [creatingFolder, setCreatingFolder] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -137,6 +139,42 @@ export default function BookmarkList({
         <aside className="w-64 bg-white/10 rounded-xl p-4 text-white h-fit">
           <div className="font-bold text-lg mb-2">Folders</div>
 
+          {/* Folder creation form */}
+          <form
+            className="flex gap-2 mb-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newFolderName.trim()) return;
+              setCreatingFolder(true);
+              const { data, error } = await supabase
+                .from("folders")
+                .insert([{ name: newFolderName.trim(), user_id: userId }]);
+              setCreatingFolder(false);
+              if (!error) {
+                setNewFolderName("");
+                fetchFolders();
+              } else {
+                alert("Failed to create folder");
+              }
+            }}
+          >
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              className="flex-1 px-2 py-1 rounded bg-white/20 text-white placeholder-gray-300 outline-none"
+              placeholder="New folder name"
+              disabled={creatingFolder}
+            />
+            <button
+              type="submit"
+              className="px-3 py-1 bg-green-600 rounded-lg text-xs font-semibold hover:bg-green-700 transition"
+              disabled={creatingFolder}
+            >
+              {creatingFolder ? "..." : "Add"}
+            </button>
+          </form>
+
           <button
             className={`block w-full text-left px-3 py-2 rounded-lg mb-1 ${
               !selectedFolder
@@ -149,17 +187,28 @@ export default function BookmarkList({
           </button>
 
           {folders.map((folder) => (
-            <button
-              key={folder.id}
-              className={`block w-full text-left px-3 py-2 rounded-lg mb-1 ${
-                selectedFolder === folder.id
-                  ? "bg-blue-600/80"
-                  : "hover:bg-white/20"
-              }`}
-              onClick={() => setSelectedFolder(folder.id)}
-            >
-              {folder.name}
-            </button>
+            <div key={folder.id} className="flex items-center mb-1 group">
+              <button
+                className={`flex-1 block text-left px-3 py-2 rounded-lg transition font-semibold ${
+                  selectedFolder === folder.id
+                    ? "bg-blue-600/80 text-white"
+                    : "hover:bg-white/20"
+                }`}
+                onClick={() => setSelectedFolder(folder.id)}
+              >
+                {folder.name}
+              </button>
+              <button
+                className="ml-2 px-2 py-1 rounded bg-red-600 text-white text-xs opacity-0 group-hover:opacity-100 transition"
+                title="Delete folder"
+                onClick={() => {
+                  setItemToDelete(folder);
+                  setDeleteModalOpen(true);
+                }}
+              >
+                &#10005;
+              </button>
+            </div>
           ))}
         </aside>
 
@@ -171,12 +220,48 @@ export default function BookmarkList({
                 !selectedFolder ||
                 b.folder_id === selectedFolder
             )
+            .sort((a, b) => {
+              // Pinned bookmarks first, then by created_at desc
+              if (a.pinned && !b.pinned) return -1;
+              if (!a.pinned && b.pinned) return 1;
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            })
             .map((bookmark) => (
               <div
                 key={bookmark.id}
                 className="bg-white/10 p-4 rounded-xl text-white flex justify-between"
               >
-                {editingId === bookmark.id ? (
+                {/* Pin/Favorite buttons */}
+                <div className="flex flex-col items-center mr-4 gap-2">
+                  <button
+                    title={bookmark.pinned ? "Unpin" : "Pin"}
+                    className={`text-yellow-400 hover:text-yellow-300 transition ${bookmark.pinned ? "" : "opacity-60"}`}
+                    onClick={async () => {
+                      await supabase.from("bookmarks").update({ pinned: !bookmark.pinned }).eq("id", bookmark.id);
+                      setBookmarks((prev) => prev.map((b) => b.id === bookmark.id ? { ...b, pinned: !bookmark.pinned } : b));
+                    }}
+                  >
+                    {bookmark.pinned ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" className="w-5 h-5"><path d="M10 2a1 1 0 0 1 1 1v10.382l2.447-2.447a1 1 0 1 1 1.414 1.414l-4.243 4.243a1 1 0 0 1-1.414 0l-4.243-4.243a1 1 0 1 1 1.414-1.414L9 13.382V3a1 1 0 0 1 1-1z"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 2v11.586l-2.293-2.293a1 1 0 0 0-1.414 1.414l4 4a1 1 0 0 0 1.414 0l4-4a1 1 0 0 0-1.414-1.414L11 13.586V2a1 1 0 1 0-2 0z"/></svg>
+                    )}
+                  </button>
+                  <button
+                    title={bookmark.favorite ? "Unfavorite" : "Favorite"}
+                    className={`text-pink-400 hover:text-pink-300 transition ${bookmark.favorite ? "" : "opacity-60"}`}
+                    onClick={async () => {
+                      await supabase.from("bookmarks").update({ favorite: !bookmark.favorite }).eq("id", bookmark.id);
+                      setBookmarks((prev) => prev.map((b) => b.id === bookmark.id ? { ...b, favorite: !bookmark.favorite } : b));
+                    }}
+                  >
+                    {bookmark.favorite ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" className="w-5 h-5"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 0 0 .95.69h4.18c.969 0 1.371 1.24.588 1.81l-3.388 2.46a1 1 0 0 0-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.388-2.46a1 1 0 0 0-1.176 0l-3.388 2.46c-.784.57-1.838-.196-1.539-1.118l1.287-3.966a1 1 0 0 0-.364-1.118l-3.388-2.46c-.783-.57-.38-1.81.588-1.81h4.18a1 1 0 0 0 .95-.69l1.286-3.967z"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 0 0 .95.69h4.18c.969 0 1.371 1.24.588 1.81l-3.388 2.46a1 1 0 0 0-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.388-2.46a1 1 0 0 0-1.176 0l-3.388 2.46c-.784.57-1.838-.196-1.539-1.118l1.287-3.966a1 1 0 0 0-.364-1.118l-3.388-2.46c-.783-.57-.38-1.81.588-1.81h4.18a1 1 0 0 0 .95-.69l1.286-3.967z"/></svg>
+                    )}
+                  </button>
+                </div>
                   <form
                     className="flex-1 flex flex-col gap-2"
                     onSubmit={(e) => {
