@@ -7,15 +7,13 @@ import { useEffect, useState } from "react";
 
 interface BookmarkListProps {
   userId: string;
+  folders: Folder[];
+  fetchFolders: () => void;
 }
 
-export default function BookmarkList({ userId }: BookmarkListProps) {
+export default function BookmarkList({ userId, folders, fetchFolders }: BookmarkListProps) {
 
-  // Removed leftover import/export helpers and file input ref
-  // Folder feature removed
-    // ...existing code...
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
   const [folderError, setFolderError] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
@@ -28,24 +26,7 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
   const [editError, setEditError] = useState("");
   const [showFavorites, setShowFavorites] = useState(false);
 
-  // Fetch folders for sidebar
-  useEffect(() => {
-    fetchFolders();
-  }, [userId]);
-
-  async function fetchFolders() {
-    try {
-      const { data, error } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      setFolders(data || []);
-    } catch (error) {
-      console.error("Error fetching folders:", error);
-    }
-  }
+  // Remove local folders state and fetchFolders
 
   async function handleCreateFolder(e: React.FormEvent) {
     e.preventDefault();
@@ -60,8 +41,8 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
         .insert({ user_id: userId, name: newFolderName.trim() })
         .select();
       if (error) throw error;
-      setFolders((prev) => [...prev, ...(data || [])]);
       setNewFolderName("");
+      fetchFolders();
     } catch (error) {
       setFolderError("Failed to create folder");
       console.error("Error creating folder:", error);
@@ -272,10 +253,8 @@ export default function BookmarkList({ userId }: BookmarkListProps) {
       // Delete the folder
       const { error } = await supabase.from("folders").delete().eq("id", folderId);
       if (error) throw error;
-      setFolders((prev) => prev.filter((f) => f.id !== folderId));
-      // If current folder is deleted, reset filter
       if (selectedFolder === folderId) setSelectedFolder(null);
-      // Refetch bookmarks to update UI
+      fetchFolders();
       fetchBookmarks();
     } catch (error) {
       alert("Failed to delete folder");

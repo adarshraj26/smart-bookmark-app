@@ -6,7 +6,7 @@ import BookmarkList from "@/components/BookmarkList";
 import LoadingScreen from "@/components/LoadingScreen";
 import UserMenu from "@/components/UserMenu";
 import { supabase } from "@/lib/supabase";
-import type { User } from "@/lib/types";
+import type { User, Folder } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 // This page requires runtime rendering (client-side auth)
@@ -16,6 +16,22 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  // Fetch folders for AddBookmarkForm and BookmarkList
+  async function fetchFolders(userId?: string) {
+    if (!userId && !user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from("folders")
+        .select("*")
+        .eq("user_id", userId || user?.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      setFolders(data || []);
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+    }
+  }
 
   useEffect(() => {
     // Check initial auth state
@@ -57,6 +73,14 @@ export default function Home() {
       subscription?.unsubscribe();
     };
   }, []);
+
+  // Fetch folders when user changes or refreshKey changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchFolders(user.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, refreshKey]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -114,6 +138,8 @@ export default function Home() {
         <div className="space-y-6 sm:space-y-8">
           <AddBookmarkForm
             userId={user.id}
+            folders={folders}
+            fetchFolders={() => fetchFolders(user.id)}
             onBookmarkAdded={() => setRefreshKey((prev) => prev + 1)}
           />
           <div>
@@ -127,7 +153,7 @@ export default function Home() {
                 Your Bookmarks
               </h2>
             </div>
-            <BookmarkList key={refreshKey} userId={user.id} />
+            <BookmarkList key={refreshKey} userId={user.id} fetchFolders={() => fetchFolders(user.id)} folders={folders} />
           </div>
         </div>
       </main>

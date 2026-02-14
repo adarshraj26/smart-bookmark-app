@@ -6,11 +6,14 @@ import type { Folder } from "@/lib/types";
 
 interface AddBookmarkFormProps {
   userId: string;
+  folders: Folder[];
+  fetchFolders: () => void;
   onBookmarkAdded?: () => void;
 }
 
-export default function AddBookmarkForm({
   userId,
+  folders,
+  fetchFolders,
   onBookmarkAdded,
 }: AddBookmarkFormProps) {
   const [url, setUrl] = useState("");
@@ -18,26 +21,7 @@ export default function AddBookmarkForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchFolders();
-  }, [userId]);
-
-  async function fetchFolders() {
-    try {
-      const { data, error } = await supabase
-        .from("folders")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      setFolders(data || []);
-    } catch (error) {
-      console.error("Error fetching folders:", error);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +57,7 @@ export default function AddBookmarkForm({
       setUrl("");
       setTitle("");
       setSelectedFolder(null);
+      fetchFolders(); // Refresh folders in case a new one was added elsewhere
       onBookmarkAdded?.();
 
       setTimeout(() => setSuccess(""), 3000);
