@@ -7,7 +7,7 @@ export interface Bookmark {
   favorite?: boolean;
   pinned?: boolean;
   created_at: string;
-}
+//
 }
 
 // Folder interface removed
