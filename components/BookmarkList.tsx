@@ -32,8 +32,8 @@ export default function BookmarkList({
   const [itemToDelete, setItemToDelete] =
     useState<Bookmark | Folder | null>(null);
 
-  // 🔥 NEW: Sidebar mobile state
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // 🔥 Mobile collapse state (DOWNWARD)
+  const [foldersOpen, setFoldersOpen] = useState(false);
 
   // ================= FETCH =================
 
@@ -141,50 +141,35 @@ export default function BookmarkList({
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <div className="lg:hidden mb-4">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="px-4 py-2 bg-white/10 text-white rounded-lg"
-        >
-          ☰ Folders
-        </button>
-      </div>
-
       <div className="flex flex-col lg:flex-row gap-6">
 
-        {/* Overlay */}
-        <div
-          className={`fixed inset-0 bg-black/40 z-40 lg:hidden ${
-            sidebarOpen ? "block" : "hidden"
-          }`}
-          onClick={() => setSidebarOpen(false)}
-        />
+        {/* ================= MOBILE FOLDER TOGGLE ================= */}
+        <div className="lg:hidden">
+          <button
+            onClick={() => setFoldersOpen(!foldersOpen)}
+            className="w-full px-4 py-2 bg-white/10 text-white rounded-lg flex justify-between items-center"
+          >
+            <span>Folders</span>
+            <span>{foldersOpen ? "▲" : "▼"}</span>
+          </button>
+        </div>
 
         {/* ================= SIDEBAR ================= */}
         <aside
           className={`
-            fixed lg:static top-0 left-0 h-full lg:h-auto
-            w-64 bg-white/10 rounded-xl p-4 text-white
-            transform transition-transform duration-300 z-50
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-            lg:translate-x-0
+            w-full lg:w-64 bg-white/10 rounded-xl p-4 text-white
+            transition-all duration-300 overflow-hidden
+            ${foldersOpen ? "max-h-[1000px] mt-4" : "max-h-0 lg:max-h-none"}
+            lg:max-h-none
           `}
         >
-          {/* Mobile Header */}
-          <div className="flex justify-between items-center lg:hidden mb-4">
-            <span className="font-bold text-lg">Folders</span>
-            <button onClick={() => setSidebarOpen(false)}>✕</button>
-          </div>
-
-          {/* Desktop Title */}
-          <div className="hidden lg:block font-bold text-lg mb-3">
+          <div className="font-bold text-lg mb-3 hidden lg:block">
             Folders
           </div>
 
           {/* Create Folder */}
           <form
-            className="flex items-center gap-2 mb-4 w-full"
+            className="flex items-center gap-2 mb-4"
             onSubmit={async (e) => {
               e.preventDefault();
               if (!newFolderName.trim()) return;
@@ -202,7 +187,7 @@ export default function BookmarkList({
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder="New folder"
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60"
+              className="flex-1 px-3 py-2 rounded-lg bg-white/20 text-white placeholder-white/60"
             />
             <button
               type="submit"
@@ -217,7 +202,7 @@ export default function BookmarkList({
             onClick={() => {
               setSelectedFolder(null);
               setShowFavorites(false);
-              setSidebarOpen(false);
+              setFoldersOpen(false);
             }}
             className="block w-full text-left px-3 py-2 rounded-lg mb-1 hover:bg-white/20"
           >
@@ -229,7 +214,7 @@ export default function BookmarkList({
             onClick={() => {
               setShowFavorites(true);
               setSelectedFolder(null);
-              setSidebarOpen(false);
+              setFoldersOpen(false);
             }}
             className="block w-full text-left px-3 py-2 rounded-lg mb-1 hover:bg-white/20"
           >
@@ -242,7 +227,7 @@ export default function BookmarkList({
                 onClick={() => {
                   setSelectedFolder(folder.id);
                   setShowFavorites(false);
-                  setSidebarOpen(false);
+                  setFoldersOpen(false);
                 }}
                 className="flex-1 text-left px-3 py-2 rounded-lg hover:bg-white/20"
               >
@@ -292,6 +277,8 @@ export default function BookmarkList({
               </div>
 
               <div className="flex gap-2 flex-wrap">
+
+                {/* Pin */}
                 <button
                   onClick={async () => {
                     await supabase
@@ -316,6 +303,7 @@ export default function BookmarkList({
                   📌
                 </button>
 
+                {/* Favorite */}
                 <button
                   onClick={async () => {
                     await supabase
@@ -361,6 +349,7 @@ export default function BookmarkList({
                 >
                   🗑
                 </button>
+
               </div>
             </div>
           ))}
