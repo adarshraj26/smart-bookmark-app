@@ -9,7 +9,6 @@ import { supabase } from "@/lib/supabase";
 import type { Folder, User } from "@/lib/types";
 import { useEffect, useState } from "react";
 
-// This page requires runtime rendering (client-side auth)
 export const dynamic = "force-dynamic";
 
 export default function Home() {
@@ -17,15 +16,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [folders, setFolders] = useState<Folder[]>([]);
-  // Fetch folders for AddBookmarkForm and BookmarkList
+
   async function fetchFolders(userId?: string) {
     if (!userId && !user?.id) return;
+
     try {
       const { data, error } = await supabase
         .from("folders")
         .select("*")
         .eq("user_id", userId || user?.id)
         .order("created_at", { ascending: true });
+
       if (error) throw error;
       setFolders(data || []);
     } catch (error) {
@@ -34,10 +35,10 @@ export default function Home() {
   }
 
   useEffect(() => {
-    // Check initial auth state
     async function checkAuth() {
       try {
         const { data } = await supabase.auth.getSession();
+
         if (data.session?.user) {
           setUser({
             id: data.session.user.id,
@@ -54,7 +55,6 @@ export default function Home() {
 
     checkAuth();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -74,36 +74,35 @@ export default function Home() {
     };
   }, []);
 
-  // Fetch folders when user changes or refreshKey changes
   useEffect(() => {
     if (user?.id) {
       fetchFolders(user.id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, refreshKey]);
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-2 sm:p-4 md:p-8">
-        <div className="w-full max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto">
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-block mb-3 sm:mb-4 p-2 sm:p-4 bg-white/20 backdrop-blur-lg rounded-full">
-              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-block mb-4 p-4 bg-white/20 backdrop-blur-lg rounded-full">
+              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
               </svg>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2 sm:mb-3">
+
+            <h1 className="text-4xl font-black text-white mb-2">
               Smart Bookmark
             </h1>
-            <p className="text-indigo-100 text-base sm:text-lg md:text-xl">
-              Save and sync your favorite links across all devices
+
+            <p className="text-indigo-100 text-lg">
+              Save and sync your favorite links
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 sm:p-6 md:p-8 border border-white/20 shadow-2xl">
+
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
             <AuthForm />
           </div>
         </div>
@@ -112,49 +111,58 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
+
+      {/* ================= HEADER ================= */}
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
-        <div className="w-full px-2 sm:px-4 md:px-8 py-2 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-            {/* Logo - Left Side */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex-shrink-0">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                </svg>
-              </div>
-              <h1 className="text-lg sm:text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent truncate">Smart Bookmark</h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+              </svg>
             </div>
-            {/* Profile Menu - Right Side */}
-            <div className="flex-shrink-0 mt-2 sm:mt-0">
-              <UserMenu user={user} />
-            </div>
+
+            <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Smart Bookmark
+            </h1>
           </div>
+
+          <UserMenu user={user} />
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-full md:max-w-6xl mx-auto px-2 sm:px-4 md:px-8 py-6 sm:py-10 md:py-12">
-        <div className="space-y-6 sm:space-y-8">
-          <AddBookmarkForm
-            userId={user.id}
-            folders={folders}
-            fetchFolders={() => fetchFolders(user.id)}
-            onBookmarkAdded={() => setRefreshKey((prev) => prev + 1)}
-          />
-          <div>
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
-              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex-shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                </svg>
-              </div>
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white">
-                Your Bookmarks
-              </h2>
+      {/* ================= MAIN ================= */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <AddBookmarkForm
+          userId={user.id}
+          folders={folders}
+          fetchFolders={() => fetchFolders(user.id)}
+          onBookmarkAdded={() => setRefreshKey((prev) => prev + 1)}
+        />
+
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+              </svg>
             </div>
-            <BookmarkList key={refreshKey} userId={user.id} fetchFolders={() => fetchFolders(user.id)} folders={folders} />
+
+            <h2 className="text-2xl font-bold text-white">
+              Your Bookmarks
+            </h2>
           </div>
+
+          <BookmarkList
+            key={refreshKey}
+            userId={user.id}
+            fetchFolders={() => fetchFolders(user.id)}
+            folders={folders}
+          />
         </div>
+
       </main>
     </div>
   );
