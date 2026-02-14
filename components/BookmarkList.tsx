@@ -22,65 +22,6 @@
         </div>
       </aside>
 
-      {/* Bookmarks List */}
-      <div className="flex-1 space-y-4">
-        {bookmarks
-          .filter((b) => !selectedFolder || b.folder_id === selectedFolder)
-          .map((bookmark) => (
-            <div
-              key={bookmark.id}
-              className="bg-white/10 p-4 rounded-xl text-white flex items-center justify-between"
-            >
-              {editingId === bookmark.id ? (
-                <form
-                  className="flex-1 flex flex-col gap-2"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    try {
-                      await supabase
-                        .from("bookmarks")
-                        .update({
-                          title: editTitle.trim(),
-                          url: editUrl.trim(),
-                          folder_id: editFolder || null,
-                        })
-                        .eq("id", bookmark.id);
-
-                      setBookmarks((prev) =>
-                        prev.map((b) =>
-                          b.id === bookmark.id
-                            ? {
-                                ...b,
-                                title: editTitle.trim(),
-                                url: editUrl.trim(),
-                                folder_id: editFolder || null,
-                              }
-                            : b
-                        )
-                      );
-
-                      setEditingId(null);
-                    } catch {
-                      alert("Failed to update bookmark");
-                    }
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) =>
-                      setEditTitle(e.target.value)
-                    }
-                    className="px-2 py-1 rounded bg-white/20 text-white"
-                    required
-                  />
-
-                  <input
-                    type="url"
-                    value={editUrl}
-                    onChange={(e) =>
-                      setEditUrl(e.target.value)
-                    }
                     className="px-2 py-1 rounded bg-white/20 text-white"
                     required
                   />
