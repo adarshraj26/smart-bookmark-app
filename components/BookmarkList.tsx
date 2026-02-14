@@ -228,7 +228,7 @@ export default function BookmarkList({
             </div>
           </div>
               {/* Bookmark Delete Modal */}
-              <Transition appear show={deleteModalOpen && folderToDelete && folderToDelete.url} as={Fragment}>
+              <Transition appear show={!!(deleteModalOpen && folderToDelete && folderToDelete.url)} as={Fragment}>
                 <Dialog
                   as="div"
                   className="relative z-50"
