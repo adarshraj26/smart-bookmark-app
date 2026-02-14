@@ -405,14 +405,14 @@ export default function BookmarkList({ userId, folders, fetchFolders }: Bookmark
                     </Listbox.Button>
                     <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
                       <Listbox.Options className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl focus:outline-none">
-                        <Listbox.Option value="" className={({ active }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-500/80 text-white' : 'text-gray-100'}`}>
+                        <Listbox.Option value="" className={({ active, selected }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-500/80 text-white' : selected ? 'text-blue-300' : 'text-blue-100'}`}>
                           No Folder
                         </Listbox.Option>
                         {folders.map(folder => (
                           <Listbox.Option
                             key={folder.id}
                             value={folder.id}
-                            className={({ active }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-400/80 text-white' : 'text-gray-100'}`}
+                            className={({ active, selected }) => `cursor-pointer select-none relative py-2 px-4 rounded-lg ${active ? 'bg-blue-400/80 text-white' : selected ? 'text-blue-300' : 'text-blue-100'}`}
                           >
                             {folder.name}
                           </Listbox.Option>
