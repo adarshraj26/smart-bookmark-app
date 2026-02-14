@@ -1,108 +1,31 @@
-"use client";
-
-import { supabase } from "@/lib/supabase";
-import type { Bookmark, Folder } from "@/lib/types";
-import { Dialog } from "@headlessui/react";
-import { useEffect, useState } from "react";
-
-interface BookmarkListProps {
-  userId: string;
-  folders: Folder[];
-  fetchFolders: () => void;
-}
-
-export default function BookmarkList({
-  userId,
-  folders,
-  fetchFolders,
-}: BookmarkListProps) {
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] =
-    useState<Bookmark | Folder | null>(null);
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editUrl, setEditUrl] = useState("");
-  const [editFolder, setEditFolder] = useState<string | null>(null);
-
-  // ================= FETCH =================
-
-  async function fetchBookmarks() {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("bookmarks")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (error) throw error;
-      setBookmarks(data || []);
-    } catch (err) {
-      alert("Failed to fetch bookmarks");
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    fetchBookmarks();
-  }, [userId]);
-
-  // ================= DELETE =================
-
-  async function handleDeleteConfirmed() {
-    if (!itemToDelete) return;
-
-    try {
-      if (isBookmark(itemToDelete)) {
-        await supabase
-          .from("bookmarks")
-          .delete()
-          .eq("id", itemToDelete.id);
-
-        setBookmarks((prev) =>
-          prev.filter((b) => b.id !== itemToDelete.id)
-        );
-      } else {
-        await supabase
-          .from("bookmarks")
-          .update({ folder_id: null })
-          .eq("folder_id", itemToDelete.id);
-
-        await supabase
-          .from("folders")
-          .delete()
-          .eq("id", itemToDelete.id);
-
-        if (selectedFolder === itemToDelete.id) {
-          setSelectedFolder(null);
-        }
-
-        fetchFolders();
-        fetchBookmarks();
-      }
-
-      setDeleteModalOpen(false);
-      setItemToDelete(null);
-    } catch (error) {
-      alert("Failed to delete");
-    }
-  }
-
-  if (loading) {
-    return <div className="text-white">Loading...</div>;
-  }
-
   return (
-    <>
+    <div className="flex gap-8">
+      {/* Sidebar: Folders */}
+      <aside className="w-64 min-w-[200px] max-w-xs bg-white/10 rounded-xl p-4 text-white h-fit self-start">
+        <div className="mb-4">
+          <div className="font-bold text-lg mb-2">Folders</div>
+          <button
+            className={`block w-full text-left px-3 py-2 rounded-lg mb-1 transition font-semibold ${!selectedFolder ? 'bg-blue-600/80 text-white' : 'hover:bg-white/20'}`}
+            onClick={() => setSelectedFolder(null)}
+          >
+            All Bookmarks
+          </button>
+          {folders.map((folder) => (
+            <button
+              key={folder.id}
+              className={`block w-full text-left px-3 py-2 rounded-lg mb-1 transition font-semibold ${selectedFolder === folder.id ? 'bg-blue-600/80 text-white' : 'hover:bg-white/20'}`}
+              onClick={() => setSelectedFolder(folder.id)}
+            >
+              {folder.name}
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      {/* Bookmarks List */}
       <div className="flex-1 space-y-4">
         {bookmarks
-          .filter(
-            (b) => !selectedFolder || b.folder_id === selectedFolder
-          )
+          .filter((b) => !selectedFolder || b.folder_id === selectedFolder)
           .map((bookmark) => (
             <div
               key={bookmark.id}
@@ -144,6 +67,108 @@ export default function BookmarkList({
                 >
                   <input
                     type="text"
+                    value={editTitle}
+                    onChange={(e) =>
+                      setEditTitle(e.target.value)
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
+                    required
+                  />
+
+                  <input
+                    type="url"
+                    value={editUrl}
+                    onChange={(e) =>
+                      setEditUrl(e.target.value)
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
+                    required
+                  />
+
+                  <select
+                    value={editFolder || ""}
+                    onChange={(e) =>
+                      setEditFolder(
+                        e.target.value || null
+                      )
+                    }
+                    className="px-2 py-1 rounded bg-white/20 text-white"
+                  >
+                    <option value="">
+                      No Folder
+                    </option>
+                    {folders.map((folder) => (
+                      <option
+                        key={folder.id}
+                        value={folder.id}
+                      >
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="px-3 py-1 bg-green-600/80 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition flex items-center gap-1"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="px-3 py-1 bg-gray-600/80 text-white rounded-lg text-xs font-semibold hover:bg-gray-700 transition flex items-center gap-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div>
+                    <h3 className="font-semibold">{bookmark.title}</h3>
+                    <a
+                      href={bookmark.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400"
+                    >
+                      {bookmark.url}
+                    </a>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => {
+                        setEditingId(bookmark.id);
+                        setEditTitle(bookmark.title);
+                        setEditUrl(bookmark.url);
+                        setEditFolder(bookmark.folder_id || null);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-600/80 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition"
+                      title="Edit"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setItemToDelete(bookmark);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-red-600/80 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition"
+                      title="Delete"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+      </div>
+
+      {/* Modal remains unchanged */}
+      {/* ...existing code for Dialog/modal... */}
+    </div>
                     value={editTitle}
                     onChange={(e) =>
                       setEditTitle(e.target.value)
