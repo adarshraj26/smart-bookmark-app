@@ -16,6 +16,7 @@ export default function BookmarkList({
   folders,
   fetchFolders,
 }: BookmarkListProps) {
+
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
@@ -33,6 +34,8 @@ export default function BookmarkList({
   const [itemToDelete, setItemToDelete] =
     useState<Bookmark | Folder | null>(null);
 
+  // ================= FETCH =================
+
   async function fetchBookmarks() {
     const { data } = await supabase
       .from("bookmarks")
@@ -48,7 +51,10 @@ export default function BookmarkList({
     fetchBookmarks();
   }, [userId]);
 
+  // ================= REALTIME =================
+
   useEffect(() => {
+
     const channel = supabase
       .channel(`bookmarks-user-${userId}`)
       .on(
@@ -60,30 +66,27 @@ export default function BookmarkList({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
+
           if (payload.eventType === "INSERT") {
-            setBookmarks((prev) => [
-              payload.new as Bookmark,
-              ...prev,
-            ]);
+            setBookmarks(prev => [payload.new as Bookmark, ...prev]);
           }
 
           if (payload.eventType === "UPDATE") {
-            setBookmarks((prev) =>
-              prev.map((b) =>
+            setBookmarks(prev =>
+              prev.map(b =>
                 b.id === (payload.new as Bookmark).id
-                  ? (payload.new as Bookmark)
+                  ? payload.new as Bookmark
                   : b
               )
             );
           }
 
           if (payload.eventType === "DELETE") {
-            setBookmarks((prev) =>
-              prev.filter(
-                (b) => b.id !== (payload.old as Bookmark).id
-              )
+            setBookmarks(prev =>
+              prev.filter(b => b.id !== (payload.old as Bookmark).id)
             );
           }
+
         }
       )
       .subscribe();
@@ -91,9 +94,13 @@ export default function BookmarkList({
     return () => {
       supabase.removeChannel(channel);
     };
+
   }, [userId]);
 
+  // ================= UPDATE =================
+
   async function handleUpdate(bookmark: Bookmark) {
+
     const { data } = await supabase
       .from("bookmarks")
       .update({
@@ -106,27 +113,33 @@ export default function BookmarkList({
       .single();
 
     if (data) {
-      setBookmarks((prev) =>
-        prev.map((b) => (b.id === data.id ? data : b))
+      setBookmarks(prev =>
+        prev.map(b => b.id === data.id ? data : b)
       );
     }
 
     setEditingId(null);
   }
 
+  // ================= DELETE =================
+
   async function handleDeleteConfirmed() {
+
     if (!itemToDelete) return;
 
     if (isBookmark(itemToDelete)) {
+
       await supabase
         .from("bookmarks")
         .delete()
         .eq("id", itemToDelete.id);
 
-      setBookmarks((prev) =>
-        prev.filter((b) => b.id !== itemToDelete.id)
+      setBookmarks(prev =>
+        prev.filter(b => b.id !== itemToDelete.id)
       );
+
     } else {
+
       await supabase
         .from("bookmarks")
         .update({ folder_id: null })
@@ -147,18 +160,22 @@ export default function BookmarkList({
 
   if (loading) return <div className="text-white">Loading...</div>;
 
-  const filteredBookmarks = bookmarks.filter((b) => {
+  const filteredBookmarks = bookmarks.filter(b => {
+
     const matchesSearch =
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.url.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (showFavorites) return b.favorite && matchesSearch;
+
     if (!selectedFolder) return matchesSearch;
+
     return b.folder_id === selectedFolder && matchesSearch;
   });
 
   return (
     <>
+
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="lg:hidden mb-3 px-4 py-2 bg-purple-600 rounded-lg text-white"
@@ -170,38 +187,46 @@ export default function BookmarkList({
 
         {/* SIDEBAR */}
         <aside
-          className={`w-full lg:w-64 box-border overflow-hidden bg-white/10 rounded-xl p-4 text-white transition-all duration-300 ${
+          className={`w-full lg:w-64 bg-white/10 rounded-xl p-4 text-white ${
             sidebarOpen ? "block" : "hidden lg:block"
           }`}
         >
+
           <div className="font-bold text-lg mb-3">Folders</div>
 
           <form
             className="flex w-full items-center gap-2 mb-4"
             onSubmit={async (e) => {
+
               e.preventDefault();
+
               if (!newFolderName.trim()) return;
 
               await supabase.from("folders").insert([
-                { name: newFolderName.trim(), user_id: userId },
+                {
+                  name: newFolderName.trim(),
+                  user_id: userId,
+                },
               ]);
 
               setNewFolderName("");
               fetchFolders();
             }}
           >
+
             <input
               value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
+              onChange={(e) =>
+                setNewFolderName(e.target.value)
+              }
               placeholder="New folder"
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-white/20"
+              className="flex-1 px-3 py-2 rounded-lg bg-white/20"
             />
-            <button
-              type="submit"
-              className="shrink-0 px-3 py-2 bg-green-500 rounded-lg"
-            >
+
+            <button className="px-3 py-2 bg-green-500 rounded-lg">
               Add
             </button>
+
           </form>
 
           <button
@@ -224,8 +249,10 @@ export default function BookmarkList({
             ⭐ Favorites
           </button>
 
-          {folders.map((folder) => (
+          {folders.map(folder => (
+
             <div key={folder.id} className="flex items-center">
+
               <button
                 onClick={() => {
                   setSelectedFolder(folder.id);
@@ -235,6 +262,7 @@ export default function BookmarkList({
               >
                 {folder.name}
               </button>
+
               <button
                 onClick={() => {
                   setItemToDelete(folder);
@@ -244,8 +272,11 @@ export default function BookmarkList({
               >
                 ×
               </button>
+
             </div>
+
           ))}
+
         </aside>
 
         {/* BOOKMARKS */}
@@ -254,146 +285,189 @@ export default function BookmarkList({
           <input
             placeholder="Search bookmarks..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) =>
+              setSearchQuery(e.target.value)
+            }
             className="w-full px-4 py-2 rounded-lg bg-white/10 text-white"
           />
 
-          {filteredBookmarks.map((bookmark) => (
+          {filteredBookmarks.map(bookmark => (
+
             <div
               key={bookmark.id}
-              className="bg-white/10 p-4 rounded-xl text-white flex justify-between items-center"
+              className="bg-white/10 p-4 rounded-xl text-white"
             >
-              <div>
-                <h3 className="font-semibold">{bookmark.title}</h3>
-                <a
-                  href={bookmark.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 break-all"
+
+              {/* EDIT MODE */}
+              {editingId === bookmark.id ? (
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpdate(bookmark);
+                  }}
+                  className="space-y-2"
                 >
-                  {bookmark.url}
-                </a>
-              </div>
 
-              <div className="flex gap-2">
-
-                <button
-                  onClick={async () => {
-                    const { data } = await supabase
-                      .from("bookmarks")
-                      .update({ pinned: !bookmark.pinned })
-                      .eq("id", bookmark.id)
-                      .select()
-                      .single();
-
-                    if (data) {
-                      setBookmarks((prev) =>
-                        prev.map((b) =>
-                          b.id === data.id ? data : b
-                        )
-                      );
+                  <input
+                    value={editTitle}
+                    onChange={(e) =>
+                      setEditTitle(e.target.value)
                     }
-                  }}
-                  className={`px-2 py-1 rounded ${
-                    bookmark.pinned
-                      ? "bg-yellow-500 text-black"
-                      : "bg-white/20"
-                  }`}
-                >
-                  📌
-                </button>
+                    className="w-full px-3 py-2 rounded bg-white/20"
+                  />
 
-                <button
-                  onClick={async () => {
-                    const { data } = await supabase
-                      .from("bookmarks")
-                      .update({ favorite: !bookmark.favorite })
-                      .eq("id", bookmark.id)
-                      .select()
-                      .single();
-
-                    if (data) {
-                      setBookmarks((prev) =>
-                        prev.map((b) =>
-                          b.id === data.id ? data : b
-                        )
-                      );
+                  <input
+                    value={editUrl}
+                    onChange={(e) =>
+                      setEditUrl(e.target.value)
                     }
-                  }}
-                  className={`px-2 py-1 rounded ${
-                    bookmark.favorite
-                      ? "bg-pink-500"
-                      : "bg-white/20"
-                  }`}
-                >
-                  {bookmark.favorite ? "★" : "☆"}
-                </button>
+                    className="w-full px-3 py-2 rounded bg-white/20"
+                  />
 
-                <button
-                  onClick={() => {
-                    setEditingId(bookmark.id);
-                    setEditTitle(bookmark.title);
-                    setEditUrl(bookmark.url);
-                    setEditFolder(bookmark.folder_id || null);
-                  }}
-                  className="px-3 py-1 bg-blue-600 rounded-lg text-xs"
-                >
-                  ✏
-                </button>
+                  <select
+                    value={editFolder || ""}
+                    onChange={(e) =>
+                      setEditFolder(e.target.value || null)
+                    }
+                    className="w-full px-3 py-2 rounded bg-white/20"
+                  >
+                    <option value="">
+                      No Folder
+                    </option>
 
-                <button
-                  onClick={() => {
-                    setItemToDelete(bookmark);
-                    setDeleteModalOpen(true);
-                  }}
-                  className="px-3 py-1 bg-red-600 rounded-lg text-xs"
-                >
-                  🗑
-                </button>
+                    {folders.map(folder => (
+                      <option key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </option>
+                    ))}
 
-              </div>
+                  </select>
+
+                  <div className="flex gap-2">
+
+                    <button className="px-3 py-1 bg-green-600 rounded">
+                      Save
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingId(null)
+                      }
+                      className="px-3 py-1 bg-gray-600 rounded"
+                    >
+                      Cancel
+                    </button>
+
+                  </div>
+
+                </form>
+
+              ) : (
+
+                <div className="flex justify-between items-center">
+
+                  <div>
+
+                    <h3>{bookmark.title}</h3>
+
+                    <a
+                      href={bookmark.url}
+                      target="_blank"
+                      className="text-blue-400"
+                    >
+                      {bookmark.url}
+                    </a>
+
+                  </div>
+
+                  <div className="flex gap-2">
+
+                    {/* EDIT ICON SVG */}
+                    <button
+                      onClick={() => {
+                        setEditingId(bookmark.id);
+                        setEditTitle(bookmark.title);
+                        setEditUrl(bookmark.url);
+                        setEditFolder(bookmark.folder_id || null);
+                      }}
+                      className="p-2 bg-blue-600 rounded-lg"
+                    >
+                      ✏️
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setItemToDelete(bookmark);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="p-2 bg-red-600 rounded-lg"
+                    >
+                      🗑️
+                    </button>
+
+                  </div>
+
+                </div>
+
+              )}
+
             </div>
+
           ))}
+
         </div>
+
       </div>
 
+      {/* DELETE MODAL */}
       {deleteModalOpen && itemToDelete && (
-        <Dialog
-          open={deleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center"
-        >
-          <div className="fixed inset-0 bg-black/40" />
-          <div className="relative bg-slate-900 p-6 rounded-xl text-white">
-            <h3 className="text-lg font-bold mb-4">
-              {isBookmark(itemToDelete)
-                ? "Delete Bookmark"
-                : "Delete Folder"}
-            </h3>
 
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 bg-gray-600 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirmed}
-                className="px-4 py-2 bg-red-600 rounded-lg"
-              >
-                Delete
-              </button>
+        <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+
+          <div className="fixed inset-0 bg-black/40" />
+
+          <div className="fixed inset-0 flex items-center justify-center">
+
+            <div className="bg-slate-900 p-6 rounded-xl text-white">
+
+              <h3 className="mb-4">
+                Delete this item?
+              </h3>
+
+              <div className="flex gap-3">
+
+                <button
+                  onClick={() =>
+                    setDeleteModalOpen(false)
+                  }
+                  className="px-4 py-2 bg-gray-600 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleDeleteConfirmed}
+                  className="px-4 py-2 bg-red-600 rounded"
+                >
+                  Delete
+                </button>
+
+              </div>
+
             </div>
+
           </div>
+
         </Dialog>
+
       )}
+
     </>
   );
 }
 
-function isBookmark(
-  item: Bookmark | Folder
-): item is Bookmark {
+function isBookmark(item: Bookmark | Folder): item is Bookmark {
   return (item as Bookmark).url !== undefined;
 }
