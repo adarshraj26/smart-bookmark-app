@@ -180,7 +180,7 @@ export default function BookmarkList({
 
       <div className="flex flex-col lg:flex-row gap-6">
 
-        {/* SIDEBAR unchanged */}
+        {/* SIDEBAR */}
         <aside
           className={`w-full lg:w-64 box-border overflow-hidden bg-white/10 rounded-xl p-4 text-white ${
             sidebarOpen ? "block" : "hidden lg:block"
@@ -361,7 +361,7 @@ export default function BookmarkList({
 
                   <div className="flex gap-2">
 
-                    {/* PIN unchanged */}
+                    {/* PIN */}
                     <button
                       onClick={async () => {
                         const { data } = await supabase
@@ -415,7 +415,6 @@ export default function BookmarkList({
                       {bookmark.favorite ? "★" : "☆"}
                     </button>
 
-                    {/* NEW SVG EDIT ICON */}
                     <button
                       onClick={() => {
                         setEditingId(bookmark.id);
@@ -428,7 +427,7 @@ export default function BookmarkList({
                       ✏️
                     </button>
 
-                    {/* DELETE unchanged */}
+                    {/* DELETE */}
                     <button
                       onClick={() => {
                         setItemToDelete(bookmark);
@@ -453,7 +452,7 @@ export default function BookmarkList({
 
       </div>
 
-      {/* DELETE MODAL unchanged */}
+      {/* DELETE MODAL */}
 
       {deleteModalOpen && itemToDelete && (
         <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>

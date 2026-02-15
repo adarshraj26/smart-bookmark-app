@@ -3,42 +3,10 @@
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
+
 export default function AuthForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-
-  async function handleEmailAuth(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
-        setError("Check your email to confirm your account!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      }
-    } catch (err: any) {
-      setError(err.message || "Authentication failed");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleGoogleAuth() {
     setError("");
@@ -65,7 +33,6 @@ export default function AuthForm() {
         throw error;
       }
       
-      // Don't set loading to false here - OAuth will redirect
     } catch (err: any) {
       console.error("Google auth error:", err);
       setError(err.message || "Google authentication failed. Make sure your redirect URL is configured correctly in Google Cloud Console.");
